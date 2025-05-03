@@ -321,6 +321,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     );
   }
 
+  List<Episode> get _allEpisodes =>
+      [..._mainEpisodes, ..._kidsEpisodes, ..._dr3iEpisodes];
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -348,7 +351,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           IconButton(
             icon: Icon(Icons.bar_chart),
             tooltip: 'Statistiken',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StatisticsPage(episodes: _mainEpisodes))),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StatisticsPage(episodes: _allEpisodes),
+              ),
+            ),
           ),
           IconButton(
             icon: Icon(Icons.filter_alt),
