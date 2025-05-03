@@ -80,6 +80,34 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     if (!ratingList.contains(ratingValue)) ratingValue = -1;
     if (!listenedValues.contains(listenedValue)) listenedValue = '';
 
+    // Dummy-Items, falls Listen leer sind
+    final authorItems = sortedAuthors.isEmpty
+      ? [DropdownMenuItem(value: '', child: Text('Keine Autoren'))]
+      : [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
+        sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList();
+    if (sortedAuthors.isEmpty) authorValue = '';
+
+    final yearItems = sortedYears.isEmpty
+      ? [DropdownMenuItem(value: '', child: Text('Keine Jahre'))]
+      : [DropdownMenuItem(value: '', child: Text('Alle Jahre'))] +
+        sortedYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList();
+    if (sortedYears.isEmpty) yearValue = '';
+
+    final ratingItems = ratingList.isEmpty
+      ? [DropdownMenuItem(value: -1, child: Text('Keine Bewertungen'))]
+      : [DropdownMenuItem(value: -1, child: Text('Alle Bewertungen'))] +
+        ratingList.map((r) => DropdownMenuItem(value: r, child: Text('$r Sterne'))).toList();
+    if (ratingList.isEmpty) ratingValue = -1;
+
+    final listenedItems = listenedValues.isEmpty
+      ? [DropdownMenuItem(value: '', child: Text('Keine Auswahl'))]
+      : [
+          DropdownMenuItem(value: '', child: Text('Alle')),
+          DropdownMenuItem(value: 'true', child: Text('Gehört')),
+          DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
+        ];
+    if (listenedValues.isEmpty) listenedValue = '';
+
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -91,35 +119,28 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               children: [
                 DropdownButtonFormField<String>(
                   value: authorValue,
-                  items: [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
-                      sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
+                  items: authorItems,
                   onChanged: (v) => setState(() => authorValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Autor'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: yearValue,
-                  items: [DropdownMenuItem(value: '', child: Text('Alle Jahre'))] +
-                      sortedYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                  items: yearItems,
                   onChanged: (v) => setState(() => yearValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Jahr'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<int>(
                   value: ratingValue,
-                  items: [DropdownMenuItem(value: -1, child: Text('Alle Bewertungen'))] +
-                      ratingList.map((r) => DropdownMenuItem(value: r, child: Text('$r Sterne'))).toList(),
+                  items: ratingItems,
                   onChanged: (v) => setState(() => ratingValue = v ?? -1),
                   decoration: InputDecoration(labelText: 'Bewertung'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: listenedValue,
-                  items: [
-                    DropdownMenuItem(value: '', child: Text('Alle')),
-                    DropdownMenuItem(value: 'true', child: Text('Gehört')),
-                    DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
-                  ],
+                  items: listenedItems,
                   onChanged: (v) => setState(() => listenedValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Gehört-Status'),
                 ),
