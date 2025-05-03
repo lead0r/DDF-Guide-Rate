@@ -55,6 +55,25 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   }
 
   void _showFilterDialog() async {
+    if (_mainEpisodes.isEmpty) {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Filter auswählen'),
+          content: SizedBox(
+            height: 80,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Schließen'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     final authors = <String>{};
     final years = <String>{};
     for (var ep in _mainEpisodes) {
@@ -255,7 +274,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           IconButton(
             icon: Icon(Icons.filter_alt),
             tooltip: 'Filter',
-            onPressed: _showFilterDialog,
+            onPressed: _loading ? null : _showFilterDialog,
           ),
           IconButton(
             icon: Icon(Icons.settings),
