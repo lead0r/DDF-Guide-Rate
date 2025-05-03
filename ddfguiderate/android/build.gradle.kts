@@ -3,6 +3,17 @@ allprojects {
         google()
         mavenCentral()
     }
+    subprojects {
+        afterEvaluate {
+            if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
+                extensions.findByType(BaseExtension::class.java)?.let { androidExt ->
+                    if (androidExt.namespace == null) {
+                        androidExt.namespace = name
+                    }
+                }
+            }
+        }
+    }
 }
 
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
