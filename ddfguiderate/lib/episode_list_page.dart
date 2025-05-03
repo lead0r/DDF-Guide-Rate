@@ -438,6 +438,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
       appBar: AppBar(
@@ -504,77 +505,193 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                 ? Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
                     onRefresh: _refreshList,
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      itemCount: _filteredEpisodes.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == _filteredEpisodes.length) {
-                          return _isLoading
-                              ? Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : SizedBox.shrink();
-                        }
-
-                        final ep = _filteredEpisodes[index];
-                        return ListTile(
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: CachedNetworkImage(
-                              imageUrl: ep.image,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                width: 50,
-                                height: 50,
-                                color: Colors.grey[300],
-                                child: Center(child: CircularProgressIndicator()),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  Icon(Icons.broken_image),
+                    child: isTablet
+                        ? GridView.builder(
+                            controller: _scrollController,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 1.5,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
                             ),
-                          ),
-                          title: Text('${ep.numberEuropa} / ${ep.title}'),
-                          subtitle: Row(
-                            children: [
-                              Row(
-                                children: List.generate(5, (index) {
-                                  int starIndex = index + 1;
-                                  return Icon(
-                                    ep.rating >= starIndex
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: Colors.amber,
-                                    size: 16,
+                            padding: EdgeInsets.all(8),
+                            itemCount: _filteredEpisodes.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == _filteredEpisodes.length) {
+                                return _isLoading
+                                    ? Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    : SizedBox.shrink();
+                              }
+
+                              final ep = _filteredEpisodes[index];
+                              return Card(
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) =>
+                                            EpisodeDetailPage(episode: ep, onUpdate: _loadStates),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return FadeTransition(
+                                            opacity: animation,
+                                            child: child,
+                                          );
+                                        },
+                                        transitionDuration: Duration(milliseconds: 300),
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                        child: CachedNetworkImage(
+                                          imageUrl: ep.image,
+                                          height: 120,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) => Container(
+                                            height: 120,
+                                            color: Colors.grey[300],
+                                            child: Center(child: CircularProgressIndicator()),
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              Icon(Icons.broken_image, size: 48),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${ep.numberEuropa} / ${ep.title}',
+                                              style: Theme.of(context).textTheme.titleMedium,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Row(
+                                                  children: List.generate(5, (index) {
+                                                    int starIndex = index + 1;
+                                                    return Icon(
+                                                      ep.rating >= starIndex
+                                                          ? Icons.star
+                                                          : Icons.star_border,
+                                                      color: Colors.amber,
+                                                      size: 16,
+                                                    );
+                                                  }),
+                                                ),
+                                                SizedBox(width: 8),
+                                                Icon(
+                                                  ep.listened
+                                                      ? Icons.check_circle
+                                                      : Icons.radio_button_unchecked,
+                                                  color: ep.listened ? Colors.green : Colors.grey,
+                                                  size: 16,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : ListView.builder(
+                            controller: _scrollController,
+                            itemCount: _filteredEpisodes.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == _filteredEpisodes.length) {
+                                return _isLoading
+                                    ? Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    : SizedBox.shrink();
+                              }
+
+                              final ep = _filteredEpisodes[index];
+                              return ListTile(
+                                leading: Hero(
+                                  tag: 'episode_${ep.id}',
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: CachedNetworkImage(
+                                      imageUrl: ep.image,
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Container(
+                                        width: 50,
+                                        height: 50,
+                                        color: Colors.grey[300],
+                                        child: Center(child: CircularProgressIndicator()),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(Icons.broken_image),
+                                    ),
+                                  ),
+                                ),
+                                title: Text('${ep.numberEuropa} / ${ep.title}'),
+                                subtitle: Row(
+                                  children: [
+                                    Row(
+                                      children: List.generate(5, (index) {
+                                        int starIndex = index + 1;
+                                        return Icon(
+                                          ep.rating >= starIndex
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          color: Colors.amber,
+                                          size: 16,
+                                        );
+                                      }),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(
+                                      ep.listened
+                                          ? Icons.check_circle
+                                          : Icons.radio_button_unchecked,
+                                      color: ep.listened ? Colors.green : Colors.grey,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) =>
+                                          EpisodeDetailPage(episode: ep, onUpdate: _loadStates),
+                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                        return FadeTransition(
+                                          opacity: animation,
+                                          child: child,
+                                        );
+                                      },
+                                      transitionDuration: Duration(milliseconds: 300),
+                                    ),
                                   );
-                                }),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(
-                                ep.listened
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
-                                color: ep.listened ? Colors.green : Colors.grey,
-                                size: 16,
-                              ),
-                            ],
+                                },
+                              );
+                            },
                           ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    EpisodeDetailPage(episode: ep, onUpdate: _loadStates),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
                   ),
           ),
         ],

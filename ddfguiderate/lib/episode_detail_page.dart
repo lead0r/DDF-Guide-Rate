@@ -105,8 +105,8 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
-    final rolesToShow =
-    showAllRoles ? episode.roles : episode.roles.take(3).toList();
+    final rolesToShow = showAllRoles ? episode.roles : episode.roles.take(3).toList();
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
       appBar: AppBar(
@@ -127,73 +127,141 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CachedNetworkImage(
-              imageUrl: episode.image,
-              width: double.infinity,
-              fit: BoxFit.fitWidth,
-              placeholder: (context, url) => Container(
-                width: double.infinity,
-                height: 200,
-                color: Colors.grey[300],
-                child: Center(child: CircularProgressIndicator()),
+            Hero(
+              tag: 'episode_${episode.id}',
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: CachedNetworkImage(
+                  imageUrl: episode.image,
+                  width: double.infinity,
+                  height: isTablet ? 300 : 200,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    width: double.infinity,
+                    height: isTablet ? 300 : 200,
+                    color: Colors.grey[300],
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: (context, url, error) => Icon(Icons.broken_image, size: 100),
+                ),
               ),
-              errorWidget: (context, url, error) => Icon(Icons.broken_image, size: 100),
             ),
             SizedBox(height: 16),
             Text(
               '${episode.numberEuropa} / ${episode.title}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            SizedBox(height: 8),
-            Text('Veröffentlichung: ${formatDate(episode.releaseDate)}'),
-            SizedBox(height: 8),
-            Text(episode.description),
-            SizedBox(height: 16),
-            Text('Autor: ${episode.author}',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text('Sprecher:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            ...rolesToShow.map<Widget>((role) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2.0),
-              child: Text('${role['Character']}: ${role['Speaker']}'),
-            )),
-            if (episode.roles.length > 3)
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    showAllRoles = !showAllRoles;
-                  });
-                },
-                child:
-                Text(showAllRoles ? 'Weniger anzeigen' : 'Alle anzeigen'),
-              ),
-            SizedBox(height: 16),
-            Row(
-              children: List.generate(5, (index) {
-                int starIndex = index + 1;
-                return IconButton(
-                  icon: Icon(
-                    episode.rating >= starIndex
-                        ? Icons.star
-                        : Icons.star_border,
-                  ),
-                  color: Colors.amber,
-                  onPressed: () => setRating(starIndex),
-                );
-              }),
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Gehört: '),
-                Switch(
-                  value: episode.listened,
-                  onChanged: (value) => toggleListened(),
-                ),
+                Icon(Icons.calendar_today, size: 16),
+                SizedBox(width: 4),
+                Text('Veröffentlichung: ${formatDate(episode.releaseDate)}'),
               ],
             ),
-            if (episode.spotifyAlbumId.isNotEmpty)
+            SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Beschreibung',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: 8),
+                    Text(episode.description),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Details',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.person, size: 16),
+                        SizedBox(width: 4),
+                        Text('Autor: ${episode.author}'),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Sprecher:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    ...rolesToShow.map((role) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
+                          child: Text('${role['Character']}: ${role['Speaker']}'),
+                        )),
+                    if (episode.roles.length > 3)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            showAllRoles = !showAllRoles;
+                          });
+                        },
+                        child: Text(showAllRoles ? 'Weniger anzeigen' : 'Alle anzeigen'),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bewertung',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: List.generate(5, (index) {
+                        int starIndex = index + 1;
+                        return IconButton(
+                          icon: Icon(
+                            episode.rating >= starIndex
+                                ? Icons.star
+                                : Icons.star_border,
+                          ),
+                          color: Colors.amber,
+                          onPressed: () => setRating(starIndex),
+                        );
+                      }),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text('Gehört: '),
+                        Switch(
+                          value: episode.listened,
+                          onChanged: (value) => toggleListened(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (episode.spotifyAlbumId.isNotEmpty) ...[
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _openSpotify,
                 child: Text('In Spotify öffnen'),
@@ -201,6 +269,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                   minimumSize: Size(double.infinity, 50),
                 ),
               ),
+            ],
             SizedBox(height: 32),
           ],
         ),
