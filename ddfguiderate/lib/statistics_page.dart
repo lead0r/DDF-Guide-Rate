@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'main.dart';
 import 'episode.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class StatisticsPage extends StatefulWidget {
   final List<Episode> episodes;
@@ -271,7 +272,14 @@ class _StatisticsPageState extends State<StatisticsPage> {
             child: Column(
               children: top10.map((ep) => ListTile(
                 leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
-                    ? Image.network(ep.coverUrl!, width: 40, height: 40, fit: BoxFit.cover)
+                    ? CachedNetworkImage(
+                        imageUrl: ep.coverUrl!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => CircularProgressIndicator(),
+                        errorWidget: (context, url, error) => Icon(Icons.broken_image),
+                      )
                     : Icon(Icons.album),
                 title: Text('${ep.nummer} / ${ep.titel}'),
                 subtitle: Row(

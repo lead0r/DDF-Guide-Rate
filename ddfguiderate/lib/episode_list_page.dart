@@ -6,6 +6,8 @@ import 'backup_service.dart';
 import 'statistics_page.dart';
 import 'settings_page.dart';
 import 'main.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'database_service.dart';
 
 class EpisodeListPage extends StatefulWidget {
   @override
@@ -46,6 +48,26 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     final main = await dataService.fetchAllMainEpisodes();
     final kids = await dataService.fetchKidsEpisodes();
     final dr3i = await dataService.fetchDr3iEpisodes();
+
+    // Lade States aus DB und mapp sie auf die Episoden
+    final dbStates = await DatabaseService().getAllStates();
+    void applyState(List<Episode> episodes) {
+      for (var ep in episodes) {
+        final state = dbStates.firstWhere(
+          (s) => s['episode_id'] == ep.id,
+          orElse: () => {},
+        );
+        if (state.isNotEmpty) {
+          ep.listened = (state['listened'] ?? 0) == 1;
+          ep.rating = state['rating'] ?? 0;
+          ep.note = state['note'] ?? '';
+        }
+      }
+    }
+    applyState(main);
+    applyState(kids);
+    applyState(dr3i);
+
     setState(() {
       _mainEpisodes = main;
       _kidsEpisodes = kids;
@@ -439,7 +461,14 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
           ? ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.network(ep.coverUrl!, width: 48, height: 48, fit: BoxFit.cover),
+              child: CachedNetworkImage(
+                imageUrl: ep.coverUrl!,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => CircularProgressIndicator(),
+                errorWidget: (context, url, error) => Icon(Icons.broken_image),
+              ),
             )
           : Icon(Icons.album, size: 48),
       title: Text('${ep.nummer} / ${ep.titel}'),

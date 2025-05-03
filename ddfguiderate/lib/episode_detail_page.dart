@@ -4,6 +4,8 @@ import 'episode.dart';
 import 'database_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EpisodeDetailPage extends StatefulWidget {
   final Episode episode;
@@ -35,6 +37,9 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       rating: _rating,
       listened: _listened,
     );
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, true);
+    }
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gespeichert!')),
@@ -54,6 +59,20 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Streaming-Link nicht verfügbar.')),
       );
+    }
+  }
+
+  Future<String> _getProviderName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('streaming_provider');
+    switch (name) {
+      case 'StreamingProvider.spotify': return 'Spotify';
+      case 'StreamingProvider.appleMusic': return 'Apple Music';
+      case 'StreamingProvider.bookbeat': return 'Bookbeat';
+      case 'StreamingProvider.amazonMusic': return 'Amazon Music';
+      case 'StreamingProvider.amazon': return 'Amazon';
+      case 'StreamingProvider.youtubeMusic': return 'YouTube Music';
+      default: return 'Spotify';
     }
   }
 
@@ -79,7 +98,12 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(ep.coverUrl!, height: 200),
+                  child: CachedNetworkImage(
+                    ep.coverUrl!, height: 200,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => Icon(Icons.broken_image),
+                                    ),
                 ),
               ),
             SizedBox(height: 16),
@@ -200,15 +224,22 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               ],
             ),
             SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: Icon(Icons.play_arrow),
-              label: Text('Streaming öffnen'),
-              onPressed: _openStreaming,
+            FutureBuilder<String>(
+              future: _getProviderName(),
+              builder: (context, snapshot) {
+                final provider = snapshot.data ?? 'Spotify';
+                return ElevatedButton.icon(
+                  icon: Icon(Icons.play_arrow),
+                  label: Text('Auf $provider abspielen'),
+                  onPressed: _openStreaming,
+                );
+              },
             ),
             if (_saving) ...[
               SizedBox(height: 16),
               Center(child: CircularProgressIndicator()),
             ],
+            SizedBox(height: 32),
           ],
         ),
       ),

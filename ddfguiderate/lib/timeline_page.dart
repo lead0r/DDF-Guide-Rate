@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'episode.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class TimelinePage extends StatelessWidget {
   final List<Episode> episodes;
@@ -42,7 +43,14 @@ class TimelinePage extends StatelessWidget {
       leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
           ? ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.network(ep.coverUrl!, width: 48, height: 48, fit: BoxFit.cover),
+              child: CachedNetworkImage(
+                imageUrl: ep.coverUrl!,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => CircularProgressIndicator(),
+                errorWidget: (context, url, error) => Icon(Icons.broken_image),
+              ),
             )
           : Icon(Icons.album, size: 48),
       title: Text('${ep.nummer} / ${ep.titel}'),
