@@ -105,19 +105,23 @@ class DatabaseService {
   Future<void> updateEpisodeState(String episodeId, {String? note, int? rating, bool? listened}) async {
     print('[DEBUG] updateEpisodeState: $episodeId, note=$note, rating=$rating, listened=$listened');
     final dbClient = await db;
-    final updateMap = <String, Object?>{};
-    if (note != null) updateMap['note'] = note;
-    if (rating != null) updateMap['rating'] = rating;
-    if (listened != null) updateMap['listened'] = listened ? 1 : 0;
-    if (updateMap.isNotEmpty) {
-      await dbClient.update(
-        'episode_state',
-        updateMap,
-        where: 'episode_id = ?',
-        whereArgs: [episodeId],
-      );
-      await _logHistory(episodeId);
-    }
+    // Hole bisherigen State (falls vorhanden)
+    final prev = await getEpisodeState(episodeId);
+    final updateMap = <String, Object?>{
+      'episode_id': episodeId,
+      'note': note ?? prev?['note'] ?? '',
+      'rating': rating ?? prev?['rating'] ?? 0,
+      'listened': listened != null
+          ? (listened ? 1 : 0)
+          : prev?['listened'] ?? 0,
+    };
+    // Upsert: Insert mit ConflictAlgorithm.replace
+    await dbClient.insert(
+      'episode_state',
+      updateMap,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await _logHistory(episodeId);
     print('[DEBUG] updateEpisodeState: Nach Insert/Update');
     final all = await getAllStates();
     print('[DEBUG] getAllStates (nach Update): $all');
