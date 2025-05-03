@@ -269,7 +269,8 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     }
     try {
       final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
+      final canLaunch = await canLaunchUrl(uri);
+      if (canLaunch) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -278,7 +279,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ungültiger Link: $url')),
+        SnackBar(content: Text('Ungültiger Link: $url')), 
       );
     }
   }
@@ -427,7 +428,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 final url = _getStreamingUrl(episode, provider);
                 return ElevatedButton.icon(
                   onPressed: url != null && url.isNotEmpty
-                      ? () => _openUrl(context, url)
+                      ? () async => await _openUrl(context, url)
                       : null,
                   icon: Icon(providerIcon),
                   label: Text('Auf $providerName anhören'),
@@ -440,7 +441,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 child: ElevatedButton.icon(
                   icon: Icon(Icons.language),
                   label: Text('Offizielle Webseite'),
-                  onPressed: () => _openUrl(context, episode.links['dreifragezeichen']),
+                  onPressed: () async => await _openUrl(context, episode.links['dreifragezeichen']),
                 ),
               ),
             if (_noteController != null) ...[
