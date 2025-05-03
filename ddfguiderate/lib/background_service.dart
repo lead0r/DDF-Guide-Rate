@@ -1,4 +1,4 @@
-import 'package:workmanager/workmanager.dart';
+import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -47,14 +47,9 @@ class NotificationService {
   }
 }
 
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((taskName, inputData) async {
-    if (taskName == 'checkNewEpisodesTask') {
-      await checkNewEpisodes();
-    }
-    return Future.value(true);
-  });
+void backgroundFetchHeadlessTask(HeadlessTask task) async {
+  await checkNewEpisodes();
+  BackgroundFetch.finish(task.taskId);
 }
 
 Future<void> checkNewEpisodes() async {

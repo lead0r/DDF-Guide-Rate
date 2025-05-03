@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'episode_list_page.dart';
-import 'package:workmanager/workmanager.dart';
+import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'background_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
-  await Workmanager().registerPeriodicTask(
-    'checkNewEpisodesTask',
-    'checkNewEpisodes',
-    frequency: Duration(hours: 24),
-    initialDelay: Duration(minutes: 1),
-    constraints: Constraints(networkType: NetworkType.connected),
-  );
   await NotificationService.init();
+
+  // BackgroundFetch konfigurieren
+  BackgroundFetch.configure(
+    BackgroundFetchConfig(
+      minimumFetchInterval: 60, // in Minuten
+      stopOnTerminate: false,
+      enableHeadless: true,
+      requiresBatteryNotLow: false,
+      requiresCharging: false,
+      requiresStorageNotLow: false,
+      requiresDeviceIdle: false,
+      requiredNetworkType: NetworkType.ANY,
+    ),
+    (String taskId) async {
+      await checkNewEpisodes();
+      BackgroundFetch.finish(taskId);
+    },
+    (String taskId) async {
+      // Timeout-Callback
+      BackgroundFetch.finish(taskId);
+    },
+  );
+  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+
   runApp(MyApp());
 }
 
