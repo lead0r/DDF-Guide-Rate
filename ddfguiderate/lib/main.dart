@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'episode_list_page.dart';
+import 'package:workmanager/workmanager.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'background_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  await Workmanager().registerPeriodicTask(
+    'checkNewEpisodesTask',
+    'checkNewEpisodes',
+    frequency: Duration(hours: 24),
+    initialDelay: Duration(minutes: 1),
+    constraints: Constraints(networkType: NetworkType.connected),
+  );
+  await NotificationService.init();
   runApp(MyApp());
 }
 

@@ -295,7 +295,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx < 0 || idx >= top.length) return Container();
-                          return Text(top[idx].key, style: TextStyle(fontSize: 10), overflow: TextOverflow.ellipsis, maxLines: 1);
+                          // Zeige nur jeden 2. Autor
+                          if (idx % 2 != 0) return Container();
+                          return Transform.rotate(
+                            angle: -0.7, // ca. 40°
+                            child: Tooltip(
+                              message: top[idx].key,
+                              child: Text(
+                                top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                                style: TextStyle(fontSize: 10),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -349,7 +362,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx < 0 || idx >= sorted.length) return Container();
-                          return Text(sorted[idx].key, style: TextStyle(fontSize: 10), overflow: TextOverflow.ellipsis, maxLines: 1);
+                          // Zeige nur jedes 3. Jahr
+                          if (idx % 3 != 0) return Container();
+                          return Transform.rotate(
+                            angle: -0.7,
+                            child: Tooltip(
+                              message: sorted[idx].key,
+                              child: Text(
+                                sorted[idx].key,
+                                style: TextStyle(fontSize: 10),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),

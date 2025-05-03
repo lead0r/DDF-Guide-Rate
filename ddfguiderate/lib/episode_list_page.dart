@@ -14,6 +14,7 @@ import 'backup_service.dart';
 import 'notification_service.dart';
 import 'main.dart';
 import 'settings_page.dart';
+import 'timeline_page.dart';
 
 // Enum für Sortieroptionen muss auf Top-Level sein
 enum SortOption {
@@ -56,6 +57,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
   final DatabaseService _dbService = DatabaseService();
 
   bool _showFutureEpisodes = false;
+  Episode? _selectedEpisode;
 
   @override
   void initState() {
@@ -450,7 +452,9 @@ class _EpisodeListPageState extends State<EpisodeListPage>
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
-    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final isTablet = MediaQuery.of(context).size.width >= 900;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final useSplitView = isTablet || isLandscape;
 
     // Trenne zukünftige und reguläre Episoden
     final currentEpisodes = getCurrentTabEpisodes();
@@ -538,6 +542,18 @@ class _EpisodeListPageState extends State<EpisodeListPage>
             onPressed: () => appState?.toggleTheme(),
             tooltip: 'Thema wechseln',
           ),
+          IconButton(
+            icon: Icon(Icons.timeline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TimelinePage(episodes: getCurrentTabEpisodes()),
+                ),
+              );
+            },
+            tooltip: 'Zeitleiste',
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -549,33 +565,62 @@ class _EpisodeListPageState extends State<EpisodeListPage>
           onTap: (_) => _refreshList(),
         ),
       ),
-      body: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity != null) {
-            if (details.primaryVelocity! < -100) {
-              // Swipe nach links
-              if (_tabController.index < 2) {
-                _tabController.animateTo(_tabController.index + 1);
-                _refreshList();
-              }
-            } else if (details.primaryVelocity! > 100) {
-              // Swipe nach rechts
-              if (_tabController.index > 0) {
-                _tabController.animateTo(_tabController.index - 1);
-                _refreshList();
-              }
+      body: useSplitView
+          ? Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: _buildEpisodeList(context, isTablet: true),
+                ),
+                VerticalDivider(width: 1),
+                Expanded(
+                  flex: 3,
+                  child: _selectedEpisode != null
+                      ? EpisodeDetailPage(
+                          episode: _selectedEpisode!,
+                          onUpdate: _loadEpisodes,
+                        )
+                      : Center(child: Text('Bitte eine Folge auswählen.')),
+                ),
+              ],
+            )
+          : _buildEpisodeList(context, isTablet: false),
+    );
+  }
+
+  Widget _buildEpisodeList(BuildContext context, {required bool isTablet}) {
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null) {
+          if (details.primaryVelocity! < -100) {
+            // Swipe nach links
+            if (_tabController.index < 2) {
+              _tabController.animateTo(_tabController.index + 1);
+              _refreshList();
+            }
+          } else if (details.primaryVelocity! > 100) {
+            // Swipe nach rechts
+            if (_tabController.index > 0) {
+              _tabController.animateTo(_tabController.index - 1);
+              _refreshList();
             }
           }
-        },
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(8),
+        }
+      },
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: SizedBox(
+              height: 36,
               child: TextField(
+                style: TextStyle(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Suchen…',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.search, size: 20),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                  isDense: true,
                 ),
                 onChanged: (value) {
                   setState(() => searchQuery = value);
@@ -583,101 +628,102 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                 },
               ),
             ),
-            if (futureEpisodes.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: GestureDetector(
-                  onTap: () => setState(() => _showFutureEpisodes = !_showFutureEpisodes),
-                  child: Row(
-                    children: [
-                      Icon(_showFutureEpisodes ? Icons.expand_less : Icons.expand_more),
-                      SizedBox(width: 8),
-                      Text('Zukünftige Folgen anzeigen (${futureEpisodes.length})', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
+          ),
+          if (futureEpisodes.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: GestureDetector(
+                onTap: () => setState(() => _showFutureEpisodes = !_showFutureEpisodes),
+                child: Row(
+                  children: [
+                    Icon(_showFutureEpisodes ? Icons.expand_less : Icons.expand_more),
+                    SizedBox(width: 8),
+                    Text('Zukünftige Folgen anzeigen (${futureEpisodes.length})', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
                 ),
               ),
-            if (_showFutureEpisodes && futureEpisodes.isNotEmpty)
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: filteredFuture.length,
-                  itemBuilder: (context, index) {
-                    final ep = filteredFuture[index];
-                    return ListTile(
-                      leading: Hero(
-                        tag: 'episode_${ep.id}',
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: CachedNetworkImage(
-                            imageUrl: ep.coverUrl ?? '',
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => ep.isFutureRelease
-                                ? Container(
-                                    width: 50,
-                                    height: 50,
-                                    color: Colors.grey[300],
-                                    child: Center(
-                                      child: Text(
-                                        'NEW',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
-                                        ),
+            ),
+          if (_showFutureEpisodes && futureEpisodes.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: filteredFuture.length,
+                itemBuilder: (context, index) {
+                  final ep = filteredFuture[index];
+                  return ListTile(
+                    leading: Hero(
+                      tag: 'episode_${ep.id}',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: CachedNetworkImage(
+                          imageUrl: ep.coverUrl ?? '',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => ep.isFutureRelease
+                              ? Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey[300],
+                                  child: Center(
+                                    child: Text(
+                                      'NEW',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue,
                                       ),
                                     ),
-                                  )
-                                : Container(
-                                    width: 50,
-                                    height: 50,
-                                    color: Colors.grey[300],
-                                    child: Center(child: CircularProgressIndicator()),
                                   ),
-                            errorWidget: (context, url, error) => ep.isFutureRelease
-                                ? Container(
-                                    width: 50,
-                                    height: 50,
-                                    color: Colors.grey[300],
-                                    child: Center(
-                                      child: Text(
-                                        'NEW',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
-                                        ),
+                                )
+                              : Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey[300],
+                                  child: Center(child: CircularProgressIndicator()),
+                                ),
+                          errorWidget: (context, url, error) => ep.isFutureRelease
+                              ? Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey[300],
+                                  child: Center(
+                                    child: Text(
+                                      'NEW',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue,
                                       ),
                                     ),
-                                  )
-                                : Icon(Icons.broken_image),
-                          ),
+                                  ),
+                                )
+                              : Icon(Icons.broken_image),
                         ),
                       ),
-                      title: Text('${ep.nummer} / ${ep.titel}'),
-                      subtitle: Text('Erscheint am: ${ep.veroeffentlichungsdatum ?? ''}'),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                            transitionDuration: Duration(milliseconds: 300),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                    ),
+                    title: Text('${ep.nummer} / ${ep.titel}'),
+                    subtitle: Text('Erscheint am: ${ep.veroeffentlichungsdatum ?? ''}'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                              EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 300),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
+            ),
             Expanded(
               child: allEpisodes.isEmpty
                   ? Center(child: CircularProgressIndicator())
