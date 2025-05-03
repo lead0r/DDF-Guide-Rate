@@ -20,7 +20,7 @@ dependencies {
 }
 
 android {
-    namespace = "com.example.ddfguiderate"
+    namespace = "com.nevial.ddfguiderate"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
