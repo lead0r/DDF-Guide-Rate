@@ -7,6 +7,7 @@ import 'main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'database_service.dart';
 import 'package:intl/intl.dart';
+import 'spotify_id_resolver.dart';
 
 class EpisodeDetailPage extends StatefulWidget {
   final Episode episode;
@@ -222,9 +223,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
-    final rolesToShow = showAllRoles && (episode.sprechrollen != null)
-        ? episode.sprechrollen!
-        : (episode.sprechrollen != null ? episode.sprechrollen!.take(3).toList() : []);
+    final rolesToShow = showAllRoles ? episode.sprechrollen : episode.sprechrollen?.take(3).toList();
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
@@ -262,7 +261,21 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                       color: Colors.grey[300],
                       child: Center(child: CircularProgressIndicator()),
                     ),
-                    errorWidget: (context, url, error) => Icon(Icons.broken_image, size: 100),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: episode.isFutureRelease
+                            ? Text(
+                                'NEW',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              )
+                            : Icon(Icons.broken_image, size: 100),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -321,10 +334,13 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                       'Sprecher:',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    ...rolesToShow.map((role) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2.0),
-                          child: Text('${role['Character']}: ${role['Speaker']}'),
-                        )),
+                    if (rolesToShow != null && rolesToShow.isNotEmpty)
+                      ...rolesToShow.map((role) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: Text('${role['rolle'] ?? 'Unbekannt'}: ${role['sprecher'] ?? 'Unbekannt'}'),
+                          ))
+                    else
+                      Text('Keine Sprecherinformationen verfügbar'),
                     if (episode.sprechrollen != null && episode.sprechrollen!.length > 3)
                       TextButton(
                         onPressed: () {
@@ -334,6 +350,49 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                         },
                         child: Text(showAllRoles ? 'Weniger anzeigen' : 'Alle anzeigen'),
                       ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Streaming',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final resolver = SpotifyIdResolver.instance;
+                        final interpreter = episode.serieTyp ?? '';
+                        final nummer = episode.nummer;
+                        final titel = episode.titel;
+                        final spotifyId = await resolver.getSpotifyId(
+                          interpreter: interpreter,
+                          nummer: nummer,
+                          titel: titel,
+                        );
+                        if (spotifyId != null && spotifyId.isNotEmpty) {
+                          final url = 'https://open.spotify.com/album/$spotifyId';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                            return;
+                          }
+                        }
+                        // Fallback: Suche
+                        final searchUrl = 'https://open.spotify.com/search/${Uri.encodeComponent(episode.titel)}';
+                        if (await canLaunchUrl(Uri.parse(searchUrl))) {
+                          await launchUrl(Uri.parse(searchUrl), mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      icon: Icon(Icons.play_circle_outline),
+                      label: Text('Auf Spotify anhören'),
+                    ),
                   ],
                 ),
               ),

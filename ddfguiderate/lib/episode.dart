@@ -43,7 +43,7 @@ class Episode {
       gesamtbeschreibung: json['gesamtbeschreibung'],
       hoerspielskriptautor: json['hörspielskriptautor'],
       veroeffentlichungsdatum: json['veröffentlichungsdatum'],
-      coverUrl: json['links']?['cover'],
+      coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'Serie',
       sprechrollen: json['sprechrollen'],
     );
@@ -59,7 +59,7 @@ class Episode {
       gesamtbeschreibung: json['gesamtbeschreibung'],
       hoerspielskriptautor: json['hörspielskriptautor'],
       veroeffentlichungsdatum: json['veröffentlichungsdatum'],
-      coverUrl: json['links']?['cover'],
+      coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'Spezial',
       sprechrollen: json['sprechrollen'],
     );
@@ -75,7 +75,7 @@ class Episode {
       gesamtbeschreibung: json['gesamtbeschreibung'],
       hoerspielskriptautor: json['hörspielskriptautor'],
       veroeffentlichungsdatum: json['veröffentlichungsdatum'],
-      coverUrl: json['links']?['cover'],
+      coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'Kurzgeschichte',
       sprechrollen: json['sprechrollen'],
     );
@@ -91,7 +91,7 @@ class Episode {
       gesamtbeschreibung: json['gesamtbeschreibung'],
       hoerspielskriptautor: json['hörspielskriptautor'],
       veroeffentlichungsdatum: json['veröffentlichungsdatum'],
-      coverUrl: json['links']?['cover'],
+      coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'Kids',
       sprechrollen: json['sprechrollen'],
     );
@@ -107,9 +107,19 @@ class Episode {
       gesamtbeschreibung: json['gesamtbeschreibung'],
       hoerspielskriptautor: json['hörspielskriptautor'],
       veroeffentlichungsdatum: json['veröffentlichungsdatum'],
-      coverUrl: json['links']?['cover'],
+      coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'DR3i',
       sprechrollen: json['sprechrollen'],
     );
+  }
+
+  bool get isFutureRelease {
+    if (veroeffentlichungsdatum == null) return false;
+    try {
+      final releaseDate = DateTime.parse(veroeffentlichungsdatum!);
+      return releaseDate.isAfter(DateTime.now());
+    } catch (_) {
+      return false;
+    }
   }
 }

@@ -570,8 +570,22 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                             color: Colors.grey[300],
                                             child: Center(child: CircularProgressIndicator()),
                                           ),
-                                          errorWidget: (context, url, error) =>
-                                              Icon(Icons.broken_image, size: 48),
+                                          errorWidget: (context, url, error) => Container(
+                                            height: 120,
+                                            color: Colors.grey[300],
+                                            child: Center(
+                                              child: ep.isFutureRelease
+                                                  ? Text(
+                                                      'NEW',
+                                                      style: TextStyle(
+                                                        fontSize: 24,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.blue,
+                                                      ),
+                                                    )
+                                                  : Icon(Icons.broken_image, size: 48),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       Padding(
@@ -651,8 +665,23 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                         color: Colors.grey[300],
                                         child: Center(child: CircularProgressIndicator()),
                                       ),
-                                      errorWidget: (context, url, error) =>
-                                          Icon(Icons.broken_image),
+                                      errorWidget: (context, url, error) => Container(
+                                        width: 50,
+                                        height: 50,
+                                        color: Colors.grey[300],
+                                        child: Center(
+                                          child: ep.isFutureRelease
+                                              ? Text(
+                                                  'NEW',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.blue,
+                                                  ),
+                                                )
+                                              : Icon(Icons.broken_image),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -759,7 +788,7 @@ List<Episode> _getPageItems(_FilterSortParams params) {
       bool hasCharacter = false;
       if (ep.sprechrollen != null) {
         for (var role in ep.sprechrollen!) {
-          if (role.containsKey('Character') && role['Character'] == params.filterParams.character) {
+          if (role.containsKey('rolle') && role['rolle'] == params.filterParams.character) {
             hasCharacter = true;
             break;
           }
@@ -779,7 +808,7 @@ List<Episode> _getPageItems(_FilterSortParams params) {
 
     final searchLower = params.filterParams.searchQuery.toLowerCase();
     if (searchLower.isNotEmpty) {
-      final rolesText = ep.sprechrollen?.map((r) => r['Speaker'] ?? r['Character'] ?? "").join(' ') ?? '';
+      final rolesText = ep.sprechrollen?.map((r) => r['sprecher'] ?? r['rolle'] ?? "").join(' ') ?? '';
       if (!('${ep.nummer} ${ep.titel} ${ep.beschreibung} $rolesText'
           .toLowerCase()
           .contains(searchLower))) {
