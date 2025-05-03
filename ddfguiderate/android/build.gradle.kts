@@ -2,7 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://www.transistorsoft.com/maven") }     
+        // [required] background_fetch
+        maven(url = "${project(":background_fetch").projectDir}/libs") 
     }
 }
 
