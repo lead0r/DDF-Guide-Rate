@@ -359,7 +359,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     final appState = MyApp.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('???'),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Text('???'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.backup),
