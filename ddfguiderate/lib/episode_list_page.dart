@@ -118,28 +118,28 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: authorValue,
+                  value: authorItems.any((item) => item.value == authorValue) ? authorValue : authorItems.first.value,
                   items: authorItems,
                   onChanged: (v) => setState(() => authorValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Autor'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: yearValue,
+                  value: yearItems.any((item) => item.value == yearValue) ? yearValue : yearItems.first.value,
                   items: yearItems,
                   onChanged: (v) => setState(() => yearValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Jahr'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  value: ratingValue,
+                  value: ratingItems.any((item) => item.value == ratingValue) ? ratingValue : ratingItems.first.value,
                   items: ratingItems,
                   onChanged: (v) => setState(() => ratingValue = v ?? -1),
                   decoration: InputDecoration(labelText: 'Bewertung'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: listenedValue,
+                  value: listenedItems.any((item) => item.value == listenedValue) ? listenedValue : listenedItems.first.value,
                   items: listenedItems,
                   onChanged: (v) => setState(() => listenedValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Gehört-Status'),
