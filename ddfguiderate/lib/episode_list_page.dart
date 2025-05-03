@@ -32,20 +32,22 @@ class EpisodeListPage extends StatefulWidget {
 
 class _EpisodeListPageState extends State<EpisodeListPage>
     with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   List<Episode> allEpisodes = [];
+  List<Episode> _kidsEpisodes = [];
+  List<Episode> _dr3iEpisodes = [];
   List<Episode> _filteredEpisodes = [];
-  final ScrollController _scrollController = ScrollController();
-  bool _isLoading = false;
   int _currentPage = 0;
-  static const int _itemsPerPage = 20;
+  final int _itemsPerPage = 20;
+  bool _isLoading = false;
+  final ScrollController _scrollController = ScrollController();
   String searchQuery = '';
-  bool filterListened = false;
   int filterStars = -1;
   int filterMinStars = -1;
+  bool filterListened = false;
   String? filterAuthor;
   String? filterCharacter;
   String? filterYear;
-  late TabController _tabController;
 
   SortOption currentSortOption = SortOption.numberDesc;
 
@@ -56,8 +58,8 @@ class _EpisodeListPageState extends State<EpisodeListPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _scrollController.addListener(_onScroll);
-    _initialize();
+    _loadEpisodes();
+    _scrollController.addListener(_scrollListener);
   }
 
   @override
@@ -67,14 +69,14 @@ class _EpisodeListPageState extends State<EpisodeListPage>
     super.dispose();
   }
 
-  void _onScroll() {
+  void _scrollListener() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 &&
         !_isLoading) {
       _loadMoreItems();
     }
   }
 
-  Future<void> _initialize() async {
+  Future<void> _loadEpisodes() async {
     setState(() => _isLoading = true);
     // Lade Episoden für alle Tabs
     final mainEpisodes = await _episodeDataService.fetchAllMainEpisodes();
@@ -116,10 +118,6 @@ class _EpisodeListPageState extends State<EpisodeListPage>
     // Dies würde eine BuildContext benötigen, was hier nicht einfach verfügbar ist
     // Du könntest es stattdessen im build-Methode oder nach einem kurzen Verzögerung tun
   }
-
-  // Neue Felder für die anderen Tabs
-  List<Episode> _kidsEpisodes = [];
-  List<Episode> _dr3iEpisodes = [];
 
   Future<void> _loadMoreItems() async {
     if (_isLoading) return;
@@ -563,7 +561,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                       ClipRRect(
                                         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                                         child: CachedNetworkImage(
-                                          imageUrl: ep.coverUrl,
+                                          imageUrl: ep.coverUrl ?? '',
                                           height: 120,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
@@ -643,7 +641,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: CachedNetworkImage(
-                                      imageUrl: ep.coverUrl,
+                                      imageUrl: ep.coverUrl ?? '',
                                       width: 50,
                                       height: 50,
                                       fit: BoxFit.cover,
@@ -751,7 +749,6 @@ class _FilterSortParams {
 
 List<Episode> _getPageItems(_FilterSortParams params) {
   final filtered = params.allEpisodes.where((ep) {
-    if (ep.interpreter != params.filterParams.interpreter) return false;
     if (params.filterParams.listened && !ep.listened) return false;
     if (params.filterParams.stars >= 0 && ep.rating != params.filterParams.stars) return false;
     if (params.filterParams.minStars >= 0 && ep.rating < params.filterParams.minStars) return false;
@@ -760,10 +757,12 @@ List<Episode> _getPageItems(_FilterSortParams params) {
 
     if (params.filterParams.character != null) {
       bool hasCharacter = false;
-      for (var role in ep.sprechrollen) {
-        if (role.containsKey('Character') && role['Character'] == params.filterParams.character) {
-          hasCharacter = true;
-          break;
+      if (ep.sprechrollen != null) {
+        for (var role in ep.sprechrollen!) {
+          if (role.containsKey('Character') && role['Character'] == params.filterParams.character) {
+            hasCharacter = true;
+            break;
+          }
         }
       }
       if (!hasCharacter) return false;
@@ -779,11 +778,13 @@ List<Episode> _getPageItems(_FilterSortParams params) {
     }
 
     final searchLower = params.filterParams.searchQuery.toLowerCase();
-    if (searchLower.isNotEmpty &&
-        !('${ep.nummer} ${ep.titel} ${ep.beschreibung} ${ep.sprechrollen.map((r) => r['Speaker'] ?? r['Character'] ?? "").join(' ')}'
-            .toLowerCase()
-            .contains(searchLower))) {
-      return false;
+    if (searchLower.isNotEmpty) {
+      final rolesText = ep.sprechrollen?.map((r) => r['Speaker'] ?? r['Character'] ?? "").join(' ') ?? '';
+      if (!('${ep.nummer} ${ep.titel} ${ep.beschreibung} $rolesText'
+          .toLowerCase()
+          .contains(searchLower))) {
+        return false;
+      }
     }
 
     return true;
