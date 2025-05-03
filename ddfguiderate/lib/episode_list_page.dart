@@ -54,6 +54,8 @@ class _EpisodeListPageState extends State<EpisodeListPage>
   final EpisodeDataService _episodeDataService = EpisodeDataService();
   final DatabaseService _dbService = DatabaseService();
 
+  bool _showFutureEpisodes = false;
+
   @override
   void initState() {
     super.initState();
@@ -448,6 +450,13 @@ class _EpisodeListPageState extends State<EpisodeListPage>
     final appState = MyApp.of(context);
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
+    // Trenne zukünftige und reguläre Episoden
+    final currentEpisodes = getCurrentTabEpisodes();
+    final futureEpisodes = currentEpisodes.where((ep) => ep.isFutureRelease).toList();
+    final regularEpisodes = currentEpisodes.where((ep) => !ep.isFutureRelease).toList();
+    final filteredFuture = _filteredEpisodes.where((ep) => ep.isFutureRelease).toList();
+    final filteredRegular = _filteredEpisodes.where((ep) => !ep.isFutureRelease).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('??? Guide'),
@@ -508,6 +517,83 @@ class _EpisodeListPageState extends State<EpisodeListPage>
               },
             ),
           ),
+          if (futureEpisodes.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: GestureDetector(
+                onTap: () => setState(() => _showFutureEpisodes = !_showFutureEpisodes),
+                child: Row(
+                  children: [
+                    Icon(_showFutureEpisodes ? Icons.expand_less : Icons.expand_more),
+                    SizedBox(width: 8),
+                    Text('Zukünftige Folgen anzeigen (${futureEpisodes.length})', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+          if (_showFutureEpisodes && futureEpisodes.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: filteredFuture.length,
+                itemBuilder: (context, index) {
+                  final ep = filteredFuture[index];
+                  return ListTile(
+                    leading: Hero(
+                      tag: 'episode_${ep.id}',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: CachedNetworkImage(
+                          imageUrl: ep.coverUrl ?? '',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: 50,
+                            height: 50,
+                            color: Colors.grey[300],
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: 50,
+                            height: 50,
+                            color: Colors.grey[300],
+                            child: Center(
+                              child: Text(
+                                'NEW',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    title: Text('${ep.nummer} / ${ep.titel}'),
+                    subtitle: Text('Erscheint am: ${ep.veroeffentlichungsdatum ?? ''}'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                              EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 300),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
           Expanded(
             child: allEpisodes.isEmpty
                 ? Center(child: CircularProgressIndicator())
@@ -523,9 +609,9 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                               mainAxisSpacing: 8,
                             ),
                             padding: EdgeInsets.all(8),
-                            itemCount: _filteredEpisodes.length + 1,
+                            itemCount: filteredRegular.length + 1,
                             itemBuilder: (context, index) {
-                              if (index == _filteredEpisodes.length) {
+                              if (index == filteredRegular.length) {
                                 return _isLoading
                                     ? Center(
                                         child: Padding(
@@ -535,8 +621,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                       )
                                     : SizedBox.shrink();
                               }
-
-                              final ep = _filteredEpisodes[index];
+                              final ep = filteredRegular[index];
                               return Card(
                                 child: InkWell(
                                   onTap: () {
@@ -635,9 +720,9 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                           )
                         : ListView.builder(
                             controller: _scrollController,
-                            itemCount: _filteredEpisodes.length + 1,
+                            itemCount: filteredRegular.length + 1,
                             itemBuilder: (context, index) {
-                              if (index == _filteredEpisodes.length) {
+                              if (index == filteredRegular.length) {
                                 return _isLoading
                                     ? Center(
                                         child: Padding(
@@ -647,8 +732,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                       )
                                     : SizedBox.shrink();
                               }
-
-                              final ep = _filteredEpisodes[index];
+                              final ep = filteredRegular[index];
                               return ListTile(
                                 leading: Hero(
                                   tag: 'episode_${ep.id}',

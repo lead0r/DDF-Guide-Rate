@@ -15,6 +15,7 @@ class Episode {
   int rating;
   bool listened;
   String? note;
+  final String? spotifyUrl;
 
   Episode({
     required this.id,
@@ -31,6 +32,7 @@ class Episode {
     this.rating = 0,
     this.listened = false,
     this.note,
+    this.spotifyUrl,
   });
 
   factory Episode.fromSerieJson(Map<String, dynamic> json) {
@@ -46,6 +48,7 @@ class Episode {
       coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'Serie',
       sprechrollen: json['sprechrollen'],
+      spotifyUrl: json['spotify'],
     );
   }
 
@@ -62,6 +65,7 @@ class Episode {
       coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'Spezial',
       sprechrollen: json['sprechrollen'],
+      spotifyUrl: json['spotify'],
     );
   }
 
@@ -78,6 +82,7 @@ class Episode {
       coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'Kurzgeschichte',
       sprechrollen: json['sprechrollen'],
+      spotifyUrl: json['spotify'],
     );
   }
 
@@ -91,9 +96,10 @@ class Episode {
       gesamtbeschreibung: json['gesamtbeschreibung'],
       hoerspielskriptautor: json['hörspielskriptautor'],
       veroeffentlichungsdatum: json['veröffentlichungsdatum'],
-      coverUrl: json['links']?['cover'] ?? json['coverUrl'],
+      coverUrl: json['links']?['cover'] ?? json['cover_itunes'] ?? json['coverUrl'],
       serieTyp: 'Kids',
       sprechrollen: json['sprechrollen'],
+      spotifyUrl: json['spotify'],
     );
   }
 
@@ -110,6 +116,7 @@ class Episode {
       coverUrl: json['links']?['cover'] ?? json['coverUrl'],
       serieTyp: 'DR3i',
       sprechrollen: json['sprechrollen'],
+      spotifyUrl: json['spotify'],
     );
   }
 

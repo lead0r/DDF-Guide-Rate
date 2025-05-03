@@ -17,7 +17,14 @@ class EpisodeDataService {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode != 200) return [];
     final data = json.decode(utf8.decode(response.bodyBytes));
-    final List episodesJson = data['serie'] ?? data['spezial'] ?? data['kurzgeschichten'] ?? data['kids'] ?? data['dr3i'] ?? [];
+    List episodesJson = [];
+    if (type == 'DR3i') {
+      episodesJson = data['die_dr3i'] ?? [];
+    } else if (type == 'Kids') {
+      episodesJson = data['kids'] ?? [];
+    } else {
+      episodesJson = data['serie'] ?? data['spezial'] ?? data['kurzgeschichten'] ?? [];
+    }
     return episodesJson.map<Episode>((json) {
       switch (type) {
         case 'Serie':

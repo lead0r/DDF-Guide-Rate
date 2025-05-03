@@ -368,17 +368,8 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                     SizedBox(height: 8),
                     ElevatedButton.icon(
                       onPressed: () async {
-                        final resolver = SpotifyIdResolver.instance;
-                        final interpreter = episode.serieTyp ?? '';
-                        final nummer = episode.nummer;
-                        final titel = episode.titel;
-                        final spotifyId = await resolver.getSpotifyId(
-                          interpreter: interpreter,
-                          nummer: nummer,
-                          titel: titel,
-                        );
-                        if (spotifyId != null && spotifyId.isNotEmpty) {
-                          final url = 'https://open.spotify.com/album/$spotifyId';
+                        if (episode.spotifyUrl != null && episode.spotifyUrl!.isNotEmpty) {
+                          final url = episode.spotifyUrl!;
                           if (await canLaunchUrl(Uri.parse(url))) {
                             await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                             return;
