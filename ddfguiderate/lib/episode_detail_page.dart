@@ -178,12 +178,12 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               builder: (context, snapshot) {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) return SizedBox();
                 final history = snapshot.data!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                return ExpansionTile(
+                  title: Text('Änderungsverlauf', style: Theme.of(context).textTheme.bodySmall),
+                  initiallyExpanded: false,
                   children: [
-                    Text('Änderungsverlauf:', style: Theme.of(context).textTheme.bodySmall),
                     ...history.take(5).map((h) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 16),
                       child: Text(
                         '${DateTime.fromMillisecondsSinceEpoch(h['timestamp'] ?? 0).toLocal().toString().substring(0, 16)}: '
                         'Notiz: ${h['note'] ?? ''} | Bewertung: ${h['rating'] ?? ''} | Gehört: ${(h['listened'] ?? 0) == 1 ? 'Ja' : 'Nein'}',
