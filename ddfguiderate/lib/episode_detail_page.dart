@@ -142,32 +142,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   }
 
   void _openSpotify() async {
-    // Zuerst versuchen wir, die Spotify-App zu öffnen
-    final spotifyUri = Uri.parse('spotify:album:${episode.spotifyAlbumId}');
-
-    // Als Fallback haben wir die Web-URL
-    final webUrl = Uri.parse('https://open.spotify.com/album/${episode.spotifyAlbumId}');
-
-    try {
-      // Versuche zuerst die App zu öffnen
-      final appLaunched = await launchUrl(
-        spotifyUri,
-        mode: LaunchMode.externalApplication,
-      );
-
-      // Wenn das nicht klappt, öffne im Browser
-      if (!appLaunched) {
-        await launchUrl(
-          webUrl,
-          mode: LaunchMode.externalApplication,
-        );
-      }
-    } catch (e) {
-      // Wenn ein Fehler auftritt, zeige eine Fehlermeldung
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Spotify kann nicht geöffnet werden: ${e.toString()}')),
-      );
-    }
+    // Diese Funktion entfällt, da spotifyAlbumId nicht mehr im Modell vorhanden ist
   }
 
   String formatDate(String date) {
@@ -247,7 +222,9 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
-    final rolesToShow = showAllRoles ? episode.roles : episode.roles.take(3).toList();
+    final rolesToShow = showAllRoles && (episode.sprechrollen != null)
+        ? episode.sprechrollen!
+        : (episode.sprechrollen != null ? episode.sprechrollen!.take(3).toList() : []);
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
@@ -278,7 +255,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 child: AspectRatio(
                   aspectRatio: 1.5,
                   child: CachedNetworkImage(
-                    imageUrl: episode.image,
+                    imageUrl: episode.coverUrl ?? '',
                     fit: BoxFit.contain,
                     fadeInDuration: Duration(milliseconds: 100),
                     placeholder: (context, url) => Container(
@@ -292,7 +269,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
             ),
             SizedBox(height: 16),
             Text(
-              '${episode.numberEuropa} / ${episode.title}',
+              '${episode.nummer} / ${episode.titel}',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             SizedBox(height: 8),
@@ -300,7 +277,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               children: [
                 Icon(Icons.calendar_today, size: 16),
                 SizedBox(width: 4),
-                Text('Veröffentlichung: ${formatDate(episode.releaseDate)}'),
+                Text('Veröffentlichung: ${formatDate(episode.veroeffentlichungsdatum ?? '')}'),
               ],
             ),
             SizedBox(height: 16),
@@ -315,7 +292,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     SizedBox(height: 8),
-                    Text(episode.description),
+                    Text(episode.beschreibung),
                   ],
                 ),
               ),
@@ -336,7 +313,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                       children: [
                         Icon(Icons.person, size: 16),
                         SizedBox(width: 4),
-                        Text('Autor: ${episode.author}'),
+                        Text('Autor: ${episode.autor}'),
                       ],
                     ),
                     SizedBox(height: 8),
@@ -348,7 +325,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                           padding: const EdgeInsets.symmetric(vertical: 2.0),
                           child: Text('${role['Character']}: ${role['Speaker']}'),
                         )),
-                    if (episode.roles.length > 3)
+                    if (episode.sprechrollen != null && episode.sprechrollen!.length > 3)
                       TextButton(
                         onPressed: () {
                           setState(() {
@@ -361,16 +338,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ),
               ),
             ),
-            if (episode.spotifyAlbumId.isNotEmpty) ...[
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _openSpotify,
-                child: Text('In Spotify öffnen'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                ),
-              ),
-            ],
             if (_noteController != null) ...[
               SizedBox(height: 16),
               Card(

@@ -36,20 +36,22 @@ class _StatisticsPageState extends State<StatisticsPage> {
         ? ratedEpisodes.fold<int>(0, (sum, ep) => sum + ep.rating) / ratedEpisodes.length
         : 0.0;
 
-    // Verteilt nach Interpreten
-    Map<String, int> interpreterCounts = {};
-    Map<String, int> interpreterListenedCounts = {};
-
+    // Nach Autor
+    Map<String, int> authorCounts = {};
     for (var ep in episodes) {
-      interpreterCounts[ep.interpreter] = (interpreterCounts[ep.interpreter] ?? 0) + 1;
-
-      if (ep.listened) {
-        interpreterListenedCounts[ep.interpreter] =
-            (interpreterListenedCounts[ep.interpreter] ?? 0) + 1;
-      }
+      authorCounts[ep.autor] = (authorCounts[ep.autor] ?? 0) + 1;
     }
 
-    // Verteilt nach Bewertungsstern
+    // Nach Jahr
+    Map<String, int> yearCounts = {};
+    for (var ep in episodes) {
+      final year = (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.length >= 4)
+          ? ep.veroeffentlichungsdatum!.substring(0, 4)
+          : 'Unbekannt';
+      yearCounts[year] = (yearCounts[year] ?? 0) + 1;
+    }
+
+    // Bewertungsverteilung
     Map<int, int> ratingDistribution = {};
     for (int i = 0; i <= 5; i++) {
       ratingDistribution[i] = episodes.where((ep) => ep.rating == i).length;
@@ -60,8 +62,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
       'listenedEpisodes': listenedEpisodes,
       'listenedPercentage': listenedPercentage.toStringAsFixed(1),
       'averageRating': averageRating.toStringAsFixed(1),
-      'interpreterCounts': interpreterCounts,
-      'interpreterListenedCounts': interpreterListenedCounts,
+      'authorCounts': authorCounts,
+      'yearCounts': yearCounts,
       'ratingDistribution': ratingDistribution,
     };
   }
@@ -92,7 +94,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
           children: [
             _buildOverviewSection(),
             SizedBox(height: 24),
-            _buildInterpreterSection(),
+            _buildAuthorSection(),
+            SizedBox(height: 24),
+            _buildYearSection(),
             SizedBox(height: 24),
             _buildRatingDistributionSection(),
             // Zusätzlicher Leerraum am Ende der Seite
@@ -145,15 +149,14 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
-  Widget _buildInterpreterSection() {
-    final Map<String, int> interpreterCounts = Map<String, int>.from(statistics['interpreterCounts'] as Map);
-    final Map<String, int> interpreterListenedCounts = Map<String, int>.from(statistics['interpreterListenedCounts'] as Map);
+  Widget _buildAuthorSection() {
+    final Map<String, int> authorCounts = Map<String, int>.from(statistics['authorCounts'] as Map);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Nach Interpreter',
+          'Nach Autor',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         SizedBox(height: 16),
@@ -161,11 +164,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Column(
-              children: interpreterCounts.entries.map((entry) {
-                final listenedCount = interpreterListenedCounts[entry.key] ?? 0;
-                final percentage = entry.value > 0
-                    ? (listenedCount / entry.value * 100)
-                    : 0.0;
+              children: authorCounts.entries.map((entry) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -174,27 +173,47 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: percentage / 100,
-                              minHeight: 20,
-                              backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text('${percentage.toStringAsFixed(1)}%'),
-                      ],
-                    ),
                     Text(
-                      '$listenedCount von ${entry.value} Folgen gehört',
+                      '${entry.value} Folgen',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 16),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildYearSection() {
+    final Map<String, int> yearCounts = Map<String, int>.from(statistics['yearCounts'] as Map);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Nach Jahr',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: yearCounts.entries.map((entry) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.key,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '${entry.value} Folgen',
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     SizedBox(height: 16),

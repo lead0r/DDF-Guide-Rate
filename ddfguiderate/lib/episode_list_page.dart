@@ -261,18 +261,20 @@ class _EpisodeListPageState extends State<EpisodeListPage>
         final Set<String> years = Set();
 
         for (var episode in allEpisodes) {
-          if (episode.author.isNotEmpty) {
-            authors.add(episode.author);
+          if (episode.autor.isNotEmpty) {
+            authors.add(episode.autor);
           }
 
-          for (var role in episode.roles) {
-            if (role.containsKey('Character')) {
-              characters.add(role['Character']);
+          if (episode.sprechrollen != null) {
+            for (var role in episode.sprechrollen!) {
+              if (role.containsKey('Character')) {
+                characters.add(role['Character']);
+              }
             }
           }
 
           try {
-            final date = DateTime.parse(episode.releaseDate);
+            final date = DateTime.parse(episode.veroeffentlichungsdatum ?? '');
             years.add(date.year.toString());
           } catch (_) {}
         }
@@ -561,7 +563,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                       ClipRRect(
                                         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                                         child: CachedNetworkImage(
-                                          imageUrl: ep.image,
+                                          imageUrl: ep.coverUrl,
                                           height: 120,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
@@ -580,7 +582,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              '${ep.numberEuropa} / ${ep.title}',
+                                              '${ep.nummer} / ${ep.titel}',
                                               style: Theme.of(context).textTheme.titleMedium,
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
@@ -641,7 +643,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: CachedNetworkImage(
-                                      imageUrl: ep.image,
+                                      imageUrl: ep.coverUrl,
                                       width: 50,
                                       height: 50,
                                       fit: BoxFit.cover,
@@ -656,7 +658,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                     ),
                                   ),
                                 ),
-                                title: Text('${ep.numberEuropa} / ${ep.title}'),
+                                title: Text('${ep.nummer} / ${ep.titel}'),
                                 subtitle: Row(
                                   children: [
                                     Row(
@@ -754,11 +756,11 @@ List<Episode> _getPageItems(_FilterSortParams params) {
     if (params.filterParams.stars >= 0 && ep.rating != params.filterParams.stars) return false;
     if (params.filterParams.minStars >= 0 && ep.rating < params.filterParams.minStars) return false;
 
-    if (params.filterParams.author != null && ep.author != params.filterParams.author) return false;
+    if (params.filterParams.author != null && ep.autor != params.filterParams.author) return false;
 
     if (params.filterParams.character != null) {
       bool hasCharacter = false;
-      for (var role in ep.roles) {
+      for (var role in ep.sprechrollen) {
         if (role.containsKey('Character') && role['Character'] == params.filterParams.character) {
           hasCharacter = true;
           break;
@@ -769,7 +771,7 @@ List<Episode> _getPageItems(_FilterSortParams params) {
 
     if (params.filterParams.year != null) {
       try {
-        final date = DateTime.parse(ep.releaseDate);
+        final date = DateTime.parse(ep.veroeffentlichungsdatum ?? '');
         if (date.year.toString() != params.filterParams.year) return false;
       } catch (_) {
         return false;
@@ -778,7 +780,7 @@ List<Episode> _getPageItems(_FilterSortParams params) {
 
     final searchLower = params.filterParams.searchQuery.toLowerCase();
     if (searchLower.isNotEmpty &&
-        !('${ep.numberEuropa} ${ep.title} ${ep.description} ${ep.roles.map((r) => r['Speaker'] ?? r['Character'] ?? "").join(' ')}'
+        !('${ep.nummer} ${ep.titel} ${ep.beschreibung} ${ep.sprechrollen.map((r) => r['Speaker'] ?? r['Character'] ?? "").join(' ')}'
             .toLowerCase()
             .contains(searchLower))) {
       return false;
@@ -790,10 +792,10 @@ List<Episode> _getPageItems(_FilterSortParams params) {
   // Sort the filtered list
   switch (params.sortOption) {
     case SortOption.numberDesc:
-      filtered.sort((a, b) => b.numberEuropa.compareTo(a.numberEuropa));
+      filtered.sort((a, b) => b.nummer.compareTo(a.nummer));
       break;
     case SortOption.numberAsc:
-      filtered.sort((a, b) => a.numberEuropa.compareTo(b.numberEuropa));
+      filtered.sort((a, b) => a.nummer.compareTo(b.nummer));
       break;
     case SortOption.ratingDesc:
       filtered.sort((a, b) => b.rating.compareTo(a.rating));
@@ -804,7 +806,7 @@ List<Episode> _getPageItems(_FilterSortParams params) {
     case SortOption.releaseDateDesc:
       filtered.sort((a, b) {
         try {
-          return DateTime.parse(b.releaseDate).compareTo(DateTime.parse(a.releaseDate));
+          return DateTime.parse(b.veroeffentlichungsdatum ?? '').compareTo(DateTime.parse(a.veroeffentlichungsdatum ?? ''));
         } catch (_) {
           return 0;
         }
@@ -813,14 +815,14 @@ List<Episode> _getPageItems(_FilterSortParams params) {
     case SortOption.releaseDateAsc:
       filtered.sort((a, b) {
         try {
-          return DateTime.parse(a.releaseDate).compareTo(DateTime.parse(b.releaseDate));
+          return DateTime.parse(a.veroeffentlichungsdatum ?? '').compareTo(DateTime.parse(b.veroeffentlichungsdatum ?? ''));
         } catch (_) {
           return 0;
         }
       });
       break;
     case SortOption.title:
-      filtered.sort((a, b) => a.title.compareTo(b.title));
+      filtered.sort((a, b) => a.titel.compareTo(b.titel));
       break;
   }
 
