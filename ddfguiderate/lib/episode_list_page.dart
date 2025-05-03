@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 
 import 'episode.dart';
 import 'episode_detail_page.dart';
@@ -30,6 +31,11 @@ class EpisodeListPage extends StatefulWidget {
 class _EpisodeListPageState extends State<EpisodeListPage>
     with SingleTickerProviderStateMixin {
   List<Episode> allEpisodes = [];
+  List<Episode> _filteredEpisodes = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
+  int _currentPage = 0;
+  static const int _itemsPerPage = 20;
   String searchQuery = '';
   bool filterListened = false;
   int filterStars = -1;
@@ -45,7 +51,64 @@ class _EpisodeListPageState extends State<EpisodeListPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _scrollController.addListener(_onScroll);
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8 &&
+        !_isLoading) {
+      _loadMoreItems();
+    }
+  }
+
+  Future<void> _loadMoreItems() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    
+    await Future.delayed(Duration(milliseconds: 100)); // Prevent rapid multiple calls
+    
+    final nextPageItems = await compute(_getPageItems, _FilterSortParams(
+      allEpisodes: allEpisodes,
+      filterParams: _FilterParams(
+        interpreter: _tabController.index == 0
+            ? 'Die drei ???'
+            : _tabController.index == 1
+            ? 'Die drei ??? Kids'
+            : 'DiE DR3i',
+        listened: filterListened,
+        stars: filterStars,
+        minStars: filterMinStars,
+        author: filterAuthor,
+        character: filterCharacter,
+        year: filterYear,
+        searchQuery: searchQuery,
+      ),
+      sortOption: currentSortOption,
+      page: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    ));
+
+    setState(() {
+      _filteredEpisodes.addAll(nextPageItems);
+      _currentPage++;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _refreshList() async {
+    setState(() {
+      _currentPage = 0;
+      _filteredEpisodes.clear();
+    });
+    await _loadMoreItems();
   }
 
   Future<void> _initialize() async {
@@ -79,23 +142,15 @@ class _EpisodeListPageState extends State<EpisodeListPage>
     final ratingsJson = prefs.getString('episode_ratings');
     final listenedJson = prefs.getString('episode_listened');
 
-    if (ratingsJson != null) {
-      final Map<String, dynamic> ratingsMap = json.decode(ratingsJson);
-      setState(() {
-        allEpisodes = allEpisodes.map((ep) {
-          ep.rating = ratingsMap[ep.id] ?? 0;
-          return ep;
-        }).toList();
-      });
-    }
+    if (ratingsJson != null || listenedJson != null) {
+      final updatedEpisodes = await compute(_updateEpisodesState, _StateUpdateParams(
+        episodes: allEpisodes,
+        ratingsJson: ratingsJson,
+        listenedJson: listenedJson,
+      ));
 
-    if (listenedJson != null) {
-      final Map<String, dynamic> listenedMap = json.decode(listenedJson);
       setState(() {
-        allEpisodes = allEpisodes.map((ep) {
-          ep.listened = listenedMap[ep.id] ?? false;
-          return ep;
-        }).toList();
+        allEpisodes = updatedEpisodes;
       });
     }
   }
@@ -380,98 +435,9 @@ class _EpisodeListPageState extends State<EpisodeListPage>
     );
   }
 
-  List<Episode> getFilteredEpisodes() {
-    final interpreter = _tabController.index == 0
-        ? 'Die drei ???'
-        : _tabController.index == 1
-        ? 'Die drei ??? Kids'
-        : 'DiE DR3i';
-
-    // Filtern
-    List<Episode> filtered = allEpisodes.where((ep) {
-      if (ep.interpreter != interpreter) return false;
-      if (filterListened && !ep.listened) return false;
-      if (filterStars >= 0 && ep.rating != filterStars) return false;
-      if (filterMinStars >= 0 && ep.rating < filterMinStars) return false;
-
-      // Erweiterte Filter
-      if (filterAuthor != null && ep.author != filterAuthor) return false;
-
-      if (filterCharacter != null) {
-        bool hasCharacter = false;
-        for (var role in ep.roles) {
-          if (role.containsKey('Character') && role['Character'] == filterCharacter) {
-            hasCharacter = true;
-            break;
-          }
-        }
-        if (!hasCharacter) return false;
-      }
-
-      if (filterYear != null) {
-        try {
-          final date = DateTime.parse(ep.releaseDate);
-          if (date.year.toString() != filterYear) return false;
-        } catch (_) {
-          return false;
-        }
-      }
-
-      final searchLower = searchQuery.toLowerCase();
-      if (searchLower.isNotEmpty &&
-          !('${ep.numberEuropa} ${ep.title} ${ep.description} ${ep.roles.map((r) => r['Speaker'] ?? r['Character'] ?? "").join(' ')}'
-              .toLowerCase()
-              .contains(searchLower))) {
-        return false;
-      }
-
-      return true;
-    }).toList();
-
-    // Sortieren
-    switch (currentSortOption) {
-      case SortOption.numberDesc:
-        filtered.sort((a, b) => b.numberEuropa.compareTo(a.numberEuropa));
-        break;
-      case SortOption.numberAsc:
-        filtered.sort((a, b) => a.numberEuropa.compareTo(b.numberEuropa));
-        break;
-      case SortOption.ratingDesc:
-        filtered.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case SortOption.ratingAsc:
-        filtered.sort((a, b) => a.rating.compareTo(b.rating));
-        break;
-      case SortOption.releaseDateDesc:
-        filtered.sort((a, b) {
-          try {
-            return DateTime.parse(b.releaseDate).compareTo(DateTime.parse(a.releaseDate));
-          } catch (_) {
-            return 0;
-          }
-        });
-        break;
-      case SortOption.releaseDateAsc:
-        filtered.sort((a, b) {
-          try {
-            return DateTime.parse(a.releaseDate).compareTo(DateTime.parse(b.releaseDate));
-          } catch (_) {
-            return 0;
-          }
-        });
-        break;
-      case SortOption.title:
-        filtered.sort((a, b) => a.title.compareTo(b.title));
-        break;
-    }
-
-    return filtered;
-  }
-
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
-    final filteredEpisodes = getFilteredEpisodes();
 
     return Scaffold(
       appBar: AppBar(
@@ -514,7 +480,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
             Tab(text: 'Die drei ??? Kids'),
             Tab(text: 'DiE DR3i'),
           ],
-          onTap: (_) => setState(() {}),
+          onTap: (_) => _refreshList(),
         ),
       ),
       body: Column(
@@ -527,73 +493,248 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onChanged: (value) => setState(() => searchQuery = value),
+              onChanged: (value) {
+                setState(() => searchQuery = value);
+                _refreshList();
+              },
             ),
           ),
           Expanded(
             child: allEpisodes.isEmpty
                 ? Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: filteredEpisodes.length,
-                    itemBuilder: (context, index) {
-                      final ep = filteredEpisodes[index];
-                      return ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: CachedNetworkImage(
-                            imageUrl: ep.image,
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
+                : RefreshIndicator(
+                    onRefresh: _refreshList,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: _filteredEpisodes.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == _filteredEpisodes.length) {
+                          return _isLoading
+                              ? Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : SizedBox.shrink();
+                        }
+
+                        final ep = _filteredEpisodes[index];
+                        return ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: CachedNetworkImage(
+                              imageUrl: ep.image,
                               width: 50,
                               height: 50,
-                              color: Colors.grey[300],
-                              child: Center(child: CircularProgressIndicator()),
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                width: 50,
+                                height: 50,
+                                color: Colors.grey[300],
+                                child: Center(child: CircularProgressIndicator()),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  Icon(Icons.broken_image),
                             ),
-                            errorWidget: (context, url, error) => Icon(Icons.broken_image),
                           ),
-                        ),
-                        title: Text('${ep.numberEuropa} / ${ep.title}'),
-                        subtitle: Row(
-                          children: [
-                            Row(
-                              children: List.generate(5, (index) {
-                                int starIndex = index + 1;
-                                return Icon(
-                                  ep.rating >= starIndex
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  color: Colors.amber,
-                                  size: 16,
-                                );
-                              }),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(
-                              ep.listened
-                                  ? Icons.check_circle
-                                  : Icons.radio_button_unchecked,
-                              color: ep.listened ? Colors.green : Colors.grey,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EpisodeDetailPage(
-                                  episode: ep, onUpdate: _loadStates),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                          title: Text('${ep.numberEuropa} / ${ep.title}'),
+                          subtitle: Row(
+                            children: [
+                              Row(
+                                children: List.generate(5, (index) {
+                                  int starIndex = index + 1;
+                                  return Icon(
+                                    ep.rating >= starIndex
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: Colors.amber,
+                                    size: 16,
+                                  );
+                                }),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(
+                                ep.listened
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
+                                color: ep.listened ? Colors.green : Colors.grey,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    EpisodeDetailPage(episode: ep, onUpdate: _loadStates),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
           ),
         ],
       ),
     );
   }
+}
+
+// Data classes for compute isolate
+class _FilterParams {
+  final String interpreter;
+  final bool listened;
+  final int stars;
+  final int minStars;
+  final String? author;
+  final String? character;
+  final String? year;
+  final String searchQuery;
+
+  _FilterParams({
+    required this.interpreter,
+    required this.listened,
+    required this.stars,
+    required this.minStars,
+    this.author,
+    this.character,
+    this.year,
+    required this.searchQuery,
+  });
+}
+
+class _FilterSortParams {
+  final List<Episode> allEpisodes;
+  final _FilterParams filterParams;
+  final SortOption sortOption;
+  final int page;
+  final int itemsPerPage;
+
+  _FilterSortParams({
+    required this.allEpisodes,
+    required this.filterParams,
+    required this.sortOption,
+    required this.page,
+    required this.itemsPerPage,
+  });
+}
+
+List<Episode> _getPageItems(_FilterSortParams params) {
+  final filtered = params.allEpisodes.where((ep) {
+    if (ep.interpreter != params.filterParams.interpreter) return false;
+    if (params.filterParams.listened && !ep.listened) return false;
+    if (params.filterParams.stars >= 0 && ep.rating != params.filterParams.stars) return false;
+    if (params.filterParams.minStars >= 0 && ep.rating < params.filterParams.minStars) return false;
+
+    if (params.filterParams.author != null && ep.author != params.filterParams.author) return false;
+
+    if (params.filterParams.character != null) {
+      bool hasCharacter = false;
+      for (var role in ep.roles) {
+        if (role.containsKey('Character') && role['Character'] == params.filterParams.character) {
+          hasCharacter = true;
+          break;
+        }
+      }
+      if (!hasCharacter) return false;
+    }
+
+    if (params.filterParams.year != null) {
+      try {
+        final date = DateTime.parse(ep.releaseDate);
+        if (date.year.toString() != params.filterParams.year) return false;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    final searchLower = params.filterParams.searchQuery.toLowerCase();
+    if (searchLower.isNotEmpty &&
+        !('${ep.numberEuropa} ${ep.title} ${ep.description} ${ep.roles.map((r) => r['Speaker'] ?? r['Character'] ?? "").join(' ')}'
+            .toLowerCase()
+            .contains(searchLower))) {
+      return false;
+    }
+
+    return true;
+  }).toList();
+
+  // Sort the filtered list
+  switch (params.sortOption) {
+    case SortOption.numberDesc:
+      filtered.sort((a, b) => b.numberEuropa.compareTo(a.numberEuropa));
+      break;
+    case SortOption.numberAsc:
+      filtered.sort((a, b) => a.numberEuropa.compareTo(b.numberEuropa));
+      break;
+    case SortOption.ratingDesc:
+      filtered.sort((a, b) => b.rating.compareTo(a.rating));
+      break;
+    case SortOption.ratingAsc:
+      filtered.sort((a, b) => a.rating.compareTo(b.rating));
+      break;
+    case SortOption.releaseDateDesc:
+      filtered.sort((a, b) {
+        try {
+          return DateTime.parse(b.releaseDate).compareTo(DateTime.parse(a.releaseDate));
+        } catch (_) {
+          return 0;
+        }
+      });
+      break;
+    case SortOption.releaseDateAsc:
+      filtered.sort((a, b) {
+        try {
+          return DateTime.parse(a.releaseDate).compareTo(DateTime.parse(b.releaseDate));
+        } catch (_) {
+          return 0;
+        }
+      });
+      break;
+    case SortOption.title:
+      filtered.sort((a, b) => a.title.compareTo(b.title));
+      break;
+  }
+
+  // Return paginated results
+  final startIndex = params.page * params.itemsPerPage;
+  if (startIndex >= filtered.length) return [];
+  
+  final endIndex = (startIndex + params.itemsPerPage).clamp(0, filtered.length);
+  return filtered.sublist(startIndex, endIndex);
+}
+
+class _StateUpdateParams {
+  final List<Episode> episodes;
+  final String? ratingsJson;
+  final String? listenedJson;
+
+  _StateUpdateParams({
+    required this.episodes,
+    required this.ratingsJson,
+    required this.listenedJson,
+  });
+}
+
+List<Episode> _updateEpisodesState(_StateUpdateParams params) {
+  final episodes = List<Episode>.from(params.episodes);
+  
+  if (params.ratingsJson != null) {
+    final Map<String, dynamic> ratingsMap = json.decode(params.ratingsJson!);
+    episodes.forEach((ep) {
+      ep.rating = ratingsMap[ep.id] ?? 0;
+    });
+  }
+
+  if (params.listenedJson != null) {
+    final Map<String, dynamic> listenedMap = json.decode(params.listenedJson!);
+    episodes.forEach((ep) {
+      ep.listened = listenedMap[ep.id] ?? false;
+    });
+  }
+
+  return episodes;
 }
