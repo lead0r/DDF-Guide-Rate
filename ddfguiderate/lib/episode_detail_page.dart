@@ -19,11 +19,34 @@ class EpisodeDetailPage extends StatefulWidget {
 class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   late Episode episode;
   bool showAllRoles = false;
+  TextEditingController? _noteController;
+  String? _noteInitialValue;
 
   @override
   void initState() {
     super.initState();
     episode = widget.episode;
+    _loadNote();
+  }
+
+  Future<void> _loadNote() async {
+    final prefs = await SharedPreferences.getInstance();
+    final note = prefs.getString('note_${episode.id}') ?? '';
+    setState(() {
+      _noteInitialValue = note;
+      _noteController = TextEditingController(text: note);
+    });
+  }
+
+  Future<void> _saveNote(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('note_${episode.id}', value);
+  }
+
+  @override
+  void dispose() {
+    _noteController?.dispose();
+    super.dispose();
   }
 
   Future<void> _saveState() async {
@@ -266,6 +289,31 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 child: Text('In Spotify öffnen'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+            ],
+            if (_noteController != null) ...[
+              SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
+                      SizedBox(height: 8),
+                      TextField(
+                        controller: _noteController,
+                        minLines: 2,
+                        maxLines: 6,
+                        decoration: InputDecoration(
+                          hintText: 'Deine Notiz zu dieser Folge ...',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) => _saveNote(value),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
