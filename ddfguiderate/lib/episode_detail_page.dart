@@ -41,6 +41,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gespeichert!')),
     );
+    Navigator.pop(context, true);
   }
 
   void _share() {

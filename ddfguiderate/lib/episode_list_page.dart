@@ -484,13 +484,16 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               child: Text('NEU', style: TextStyle(color: Colors.white)),
             )
           : null,
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => EpisodeDetailPage(episode: ep),
           ),
         );
+        if (result == true) {
+          _loadEpisodes(); // Episoden neu laden!
+        }
       },
     );
   }
