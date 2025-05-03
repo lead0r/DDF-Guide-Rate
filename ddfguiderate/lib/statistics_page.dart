@@ -121,17 +121,37 @@ class _StatisticsPageState extends State<StatisticsPage> {
             SizedBox(height: 24),
             _buildRatingDistributionSection(),
             SizedBox(height: 24),
+
+            // Debug-Ausgabe: Anzahl Episoden pro Serie
+            Builder(builder: (context) {
+              final all = widget.episodes;
+              print('Serie: ${all.where((e) => e.serieTyp == "Serie").length}');
+              print('Kids: ${all.where((e) => e.serieTyp == "Kids").length}');
+              print('DR3i: ${all.where((e) => e.serieTyp == "DR3i").length}');
+              print('Spezial: ${all.where((e) => e.serieTyp == "Spezial").length}');
+              print('Kurzgeschichte: ${all.where((e) => e.serieTyp == "Kurzgeschichte").length}');
+              return SizedBox.shrink();
+            }),
+
             buildProgressTimeline(
-              widget.episodes.where((e) => (e.serieTyp?.toLowerCase().replaceAll(' ', '') ?? '') == 'serie').toList(),
+              widget.episodes.where((e) => e.serieTyp == 'Serie').toList(),
               '???'
             ),
             buildProgressTimeline(
-              widget.episodes.where((e) => (e.serieTyp?.toLowerCase().replaceAll(' ', '') ?? '') == 'kids').toList(),
+              widget.episodes.where((e) => e.serieTyp == 'Kids').toList(),
               'Kids'
             ),
             buildProgressTimeline(
-              widget.episodes.where((e) => (e.serieTyp?.toLowerCase().replaceAll(' ', '') ?? '') == 'dr3i').toList(),
+              widget.episodes.where((e) => e.serieTyp == 'DR3i').toList(),
               'DR3i'
+            ),
+            buildProgressTimeline(
+              widget.episodes.where((e) => e.serieTyp == 'Spezial').toList(),
+              'Spezial'
+            ),
+            buildProgressTimeline(
+              widget.episodes.where((e) => e.serieTyp == 'Kurzgeschichte').toList(),
+              'Kurzgeschichten'
             ),
             // Zusätzlicher Leerraum am Ende der Seite
             SizedBox(height: 80),
