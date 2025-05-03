@@ -228,10 +228,25 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       (_selectedRating == -1 || ep.rating == _selectedRating) &&
       (_selectedListened == '' || (_selectedListened == 'true' ? ep.listened : !ep.listened))
     ).toList();
-    if (_sortBy == 'date') {
-      filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
-    } else {
-      filtered.sort((a, b) => b.nummer.compareTo(a.nummer));
+    switch (_sortBy) {
+      case 'date':
+        filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
+        break;
+      case 'oldest':
+        filtered.sort((a, b) => (a.veroeffentlichungsdatum ?? '').compareTo(b.veroeffentlichungsdatum ?? ''));
+        break;
+      case 'rating_high':
+        filtered.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'rating_low':
+        filtered.sort((a, b) => a.rating.compareTo(b.rating));
+        break;
+      case 'title':
+        filtered.sort((a, b) => a.titel.toLowerCase().compareTo(b.titel.toLowerCase()));
+        break;
+      case 'number':
+        filtered.sort((a, b) => b.nummer.compareTo(a.nummer));
+        break;
     }
     return filtered;
   }
@@ -251,6 +266,42 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             value: 'date',
             groupValue: _sortBy,
             title: Text('Neueste zuerst'),
+            onChanged: (v) {
+              setState(() => _sortBy = v!);
+              Navigator.pop(context);
+            },
+          ),
+          RadioListTile<String>(
+            value: 'oldest',
+            groupValue: _sortBy,
+            title: Text('Älteste zuerst'),
+            onChanged: (v) {
+              setState(() => _sortBy = v!);
+              Navigator.pop(context);
+            },
+          ),
+          RadioListTile<String>(
+            value: 'rating_high',
+            groupValue: _sortBy,
+            title: Text('Höchste Bewertung'),
+            onChanged: (v) {
+              setState(() => _sortBy = v!);
+              Navigator.pop(context);
+            },
+          ),
+          RadioListTile<String>(
+            value: 'rating_low',
+            groupValue: _sortBy,
+            title: Text('Niedrigste Bewertung'),
+            onChanged: (v) {
+              setState(() => _sortBy = v!);
+              Navigator.pop(context);
+            },
+          ),
+          RadioListTile<String>(
+            value: 'title',
+            groupValue: _sortBy,
+            title: Text('Titel (A-Z)'),
             onChanged: (v) {
               setState(() => _sortBy = v!);
               Navigator.pop(context);

@@ -98,6 +98,8 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ],
               ),
             SizedBox(height: 16),
+            Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
+            SizedBox(height: 16),
             if (ep.sprechrollen != null && ep.sprechrollen!.isNotEmpty) ...[
               Text('Sprecher:', style: Theme.of(context).textTheme.titleMedium),
               ...ep.sprechrollen!.map<Widget>((s) => Padding(
@@ -106,7 +108,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               )),
               SizedBox(height: 16),
             ],
-            Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
             SizedBox(height: 24),
             if ((ep.links['dreifragezeichen'] != null) && (ep.serieTyp == 'Serie' || ep.serieTyp == 'Kids'))
               Padding(

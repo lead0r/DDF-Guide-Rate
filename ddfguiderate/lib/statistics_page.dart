@@ -120,6 +120,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
             _buildYearBarChartSection(),
             SizedBox(height: 24),
             _buildRatingDistributionSection(),
+            SizedBox(height: 24),
+            buildProgressTimeline(widget.episodes.where((e) => e.serieTyp == 'Serie').toList(), 'Serie'),
+            buildProgressTimeline(widget.episodes.where((e) => e.serieTyp == 'Kids').toList(), 'Kids'),
+            buildProgressTimeline(widget.episodes.where((e) => e.serieTyp == 'DR3i').toList(), 'DR3i'),
             // Zusätzlicher Leerraum am Ende der Seite
             SizedBox(height: 80),
           ],
@@ -362,18 +366,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx < 0 || idx >= sorted.length) return Container();
-                          // Zeige nur jedes 3. Jahr
+                          // Zeige nur jedes 2. oder 3. Jahr, kleiner und gedreht
                           if (idx % 3 != 0) return Container();
                           return Transform.rotate(
                             angle: -0.7,
-                            child: Tooltip(
-                              message: sorted[idx].key,
-                              child: Text(
-                                sorted[idx].key,
-                                style: TextStyle(fontSize: 10),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
+                            child: Text(
+                              sorted[idx].key,
+                              style: TextStyle(fontSize: 9),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           );
                         },
@@ -486,6 +487,36 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget buildProgressTimeline(List<Episode> episodes, String title) {
+    final sorted = List<Episode>.from(episodes)
+      ..sort((a, b) => (a.veroeffentlichungsdatum ?? '').compareTo(b.veroeffentlichungsdatum ?? ''));
+    final total = sorted.length;
+    final listened = sorted.where((e) => e.listened).length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$title: $listened/$total (${total > 0 ? ((listened / total) * 100).toStringAsFixed(1) : '0'}%)', style: Theme.of(context).textTheme.titleMedium),
+        SizedBox(
+          height: 24,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: sorted.length,
+            itemBuilder: (context, i) {
+              final e = sorted[i];
+              return Container(
+                width: 4,
+                height: 20,
+                margin: EdgeInsets.symmetric(horizontal: 0.5),
+                color: e.listened ? Colors.green : Colors.red,
+              );
+            },
+          ),
+        ),
+        SizedBox(height: 8),
       ],
     );
   }
