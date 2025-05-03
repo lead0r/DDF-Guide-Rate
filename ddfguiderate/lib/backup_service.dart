@@ -1,25 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'database_service.dart';
 
 class BackupService {
   static Future<Map<String, dynamic>> getExportData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ratingsJson = prefs.getString('episode_ratings') ?? '{}';
-    final listenedJson = prefs.getString('episode_listened') ?? '{}';
-
-    final Map<String, dynamic> exportData = {
-      'ratings': json.decode(ratingsJson),
-      'listened': json.decode(listenedJson),
-      'exportDate': DateTime.now().toIso8601String(),
-      'appVersion': '1.0.0', // Hier könntest du deine App-Version eintragen
-    };
-
-    return exportData;
+    // Hole Daten aus SQLite
+    final db = DatabaseService();
+    return await db.exportAllToJson();
   }
 
   static Future<String> createAndShareBackupFile() async {
@@ -59,7 +50,7 @@ class BackupService {
         final Map<String, dynamic> importData = json.decode(clipboardData.text!);
 
         // Datenvalidierung
-        if (!importData.containsKey('ratings') || !importData.containsKey('listened')) {
+        if (!importData.containsKey('episode_state') || !importData.containsKey('episode_state_history')) {
           return 'Ungültiges Backup-Format in der Zwischenablage';
         }
 
@@ -70,9 +61,7 @@ class BackupService {
             title: Text('Backup importieren'),
             content: Text(
                 'Möchtest du wirklich dieses Backup importieren? '
-                    'Dies wird alle deine aktuellen Bewertungen und Hörstatus überschreiben.\n\n'
-                    'Backup vom: ${importData['exportDate'] ?? 'Unbekannt'}'
-            ),
+                    'Dies wird alle deine aktuellen Notizen, Bewertungen und Hörstatus überschreiben.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -90,10 +79,9 @@ class BackupService {
           return 'Import abgebrochen';
         }
 
-        // In SharedPreferences speichern
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('episode_ratings', json.encode(importData['ratings']));
-        await prefs.setString('episode_listened', json.encode(importData['listened']));
+        // In SQLite speichern
+        final db = DatabaseService();
+        await db.importAllFromJson(importData);
 
         return 'Backup erfolgreich importiert';
       } catch (e) {
@@ -115,7 +103,7 @@ class BackupService {
             ListTile(
               leading: Icon(Icons.upload),
               title: Text('Backup exportieren'),
-              subtitle: Text('Bewertungen und Hörstatus exportieren'),
+              subtitle: Text('Notizen, Bewertungen und Hörstatus exportieren'),
               onTap: () async {
                 Navigator.pop(context);
                 final message = await createAndShareBackupFile();

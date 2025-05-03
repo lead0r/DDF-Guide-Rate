@@ -6,6 +6,7 @@ import 'episode.dart';
 import 'main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'database_service.dart';
+import 'package:intl/intl.dart';
 
 class EpisodeDetailPage extends StatefulWidget {
   final Episode episode;
@@ -176,6 +177,71 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     } catch (e) {
       return date;
     }
+  }
+
+  Future<void> _showHistoryDialog() async {
+    final db = DatabaseService();
+    final history = await db.getHistory(episode.id);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Änderungsverlauf'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: history.isEmpty
+              ? Text('Keine Änderungen vorhanden.')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: history.length,
+                  itemBuilder: (context, index) {
+                    final entry = history[index];
+                    final date = DateTime.fromMillisecondsSinceEpoch(entry['timestamp'] ?? 0);
+                    final dateStr = DateFormat('dd.MM.yyyy HH:mm').format(date);
+                    return Card(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      child: ListTile(
+                        title: Text('Notiz: ${entry['note'] ?? ''}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Bewertung: ${entry['rating'] ?? 0} Sterne'),
+                            Text('Gehört: ${(entry['listened'] ?? 0) == 1 ? "Ja" : "Nein"}'),
+                            Text('Zeit: $dateStr'),
+                          ],
+                        ),
+                        trailing: TextButton(
+                          child: Text('Wiederherstellen'),
+                          onPressed: () async {
+                            await db.updateEpisodeState(
+                              episode.id,
+                              note: entry['note'],
+                              rating: entry['rating'],
+                              listened: (entry['listened'] ?? 0) == 1,
+                            );
+                            await _loadNote();
+                            setState(() {
+                              episode.rating = entry['rating'] ?? 0;
+                              episode.listened = (entry['listened'] ?? 0) == 1;
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Stand wiederhergestellt.')),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Schließen'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -398,6 +464,17 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                   ],
                 ),
               ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  icon: Icon(Icons.history),
+                  label: Text('Änderungsverlauf anzeigen'),
+                  onPressed: _showHistoryDialog,
+                ),
+              ],
             ),
             SizedBox(height: 32),
           ],

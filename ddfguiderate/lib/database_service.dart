@@ -21,7 +21,7 @@ class DatabaseService {
     final path = join(documentsDirectory.path, 'episode_state.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (Database db, int version) async {
         await db.execute('''
           CREATE TABLE episode_state (
@@ -31,6 +31,30 @@ class DatabaseService {
             listened INTEGER
           )
         ''');
+        await db.execute('''
+          CREATE TABLE episode_state_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            episode_id TEXT,
+            note TEXT,
+            rating INTEGER,
+            listened INTEGER,
+            timestamp INTEGER
+          )
+        ''');
+      },
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS episode_state_history (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              episode_id TEXT,
+              note TEXT,
+              rating INTEGER,
+              listened INTEGER,
+              timestamp INTEGER
+            )
+          ''');
+        }
       },
     );
   }
@@ -55,6 +79,7 @@ class DatabaseService {
       {'episode_id': episodeId, 'note': note},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    await _logHistory(episodeId);
   }
 
   Future<void> setRating(String episodeId, int rating) async {
@@ -64,6 +89,7 @@ class DatabaseService {
       {'episode_id': episodeId, 'rating': rating},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    await _logHistory(episodeId);
   }
 
   Future<void> setListened(String episodeId, bool listened) async {
@@ -73,6 +99,7 @@ class DatabaseService {
       {'episode_id': episodeId, 'listened': listened ? 1 : 0},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    await _logHistory(episodeId);
   }
 
   Future<void> updateEpisodeState(String episodeId, {String? note, int? rating, bool? listened}) async {
@@ -88,6 +115,21 @@ class DatabaseService {
         where: 'episode_id = ?',
         whereArgs: [episodeId],
       );
+      await _logHistory(episodeId);
+    }
+  }
+
+  Future<void> _logHistory(String episodeId) async {
+    final dbClient = await db;
+    final state = await getEpisodeState(episodeId);
+    if (state != null) {
+      await dbClient.insert('episode_state_history', {
+        'episode_id': episodeId,
+        'note': state['note'],
+        'rating': state['rating'],
+        'listened': state['listened'],
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
     }
   }
 
@@ -98,10 +140,56 @@ class DatabaseService {
       where: 'episode_id = ?',
       whereArgs: [episodeId],
     );
+    // Optional: History nicht löschen
   }
 
   Future<List<Map<String, dynamic>>> getAllStates() async {
     final dbClient = await db;
     return await dbClient.query('episode_state');
   }
+
+  Future<List<Map<String, dynamic>>> getHistory(String episodeId) async {
+    final dbClient = await db;
+    return await dbClient.query(
+      'episode_state_history',
+      where: 'episode_id = ?',
+      whereArgs: [episodeId],
+      orderBy: 'timestamp DESC',
+    );
+  }
+
+  // Exportiert beide Tabellen als JSON-Map
+  Future<Map<String, dynamic>> exportAllToJson() async {
+    final dbClient = await db;
+    final states = await dbClient.query('episode_state');
+    final history = await dbClient.query('episode_state_history');
+    return {
+      'episode_state': states,
+      'episode_state_history': history,
+    };
+  }
+
+  // Importiert beide Tabellen aus einer JSON-Map
+  Future<void> importAllFromJson(Map<String, dynamic> data) async {
+    final dbClient = await db;
+    final batch = dbClient.batch();
+    // Leere Tabellen
+    batch.delete('episode_state');
+    batch.delete('episode_state_history');
+    // Füge States ein
+    if (data['episode_state'] is List) {
+      for (final row in data['episode_state']) {
+        batch.insert('episode_state', Map<String, Object?>.from(row), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    }
+    // Füge History ein
+    if (data['episode_state_history'] is List) {
+      for (final row in data['episode_state_history']) {
+        batch.insert('episode_state_history', Map<String, Object?>.from(row), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    }
+    await batch.commit(noResult: true);
+  }
+
+  // Export/Import folgt im nächsten Schritt
 } 
