@@ -260,6 +260,29 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     return links;
   }
 
+  Future<void> _openUrl(BuildContext context, String? url) async {
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kein Link verfügbar.')),
+      );
+      return;
+    }
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Kann Link nicht öffnen: $url')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ungültiger Link: $url')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
@@ -404,11 +427,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 final url = _getStreamingUrl(episode, provider);
                 return ElevatedButton.icon(
                   onPressed: url != null && url.isNotEmpty
-                      ? () async {
-                          if (await canLaunchUrl(Uri.parse(url))) {
-                            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                          }
-                        }
+                      ? () => _openUrl(context, url)
                       : null,
                   icon: Icon(providerIcon),
                   label: Text('Auf $providerName anhören'),
@@ -421,12 +440,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 child: ElevatedButton.icon(
                   icon: Icon(Icons.language),
                   label: Text('Offizielle Webseite'),
-                  onPressed: () async {
-                    final url = episode.links['dreifragezeichen']!;
-                    if (await canLaunchUrl(Uri.parse(url))) {
-                      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                    }
-                  },
+                  onPressed: () => _openUrl(context, episode.links['dreifragezeichen']),
                 ),
               ),
             if (_noteController != null) ...[

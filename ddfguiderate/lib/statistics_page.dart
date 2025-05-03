@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'main.dart';
 import 'episode.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class StatisticsPage extends StatefulWidget {
   final List<Episode> episodes;
@@ -57,6 +58,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
       ratingDistribution[i] = episodes.where((ep) => ep.rating == i).length;
     }
 
+    // Fortschritt über Zeit (Monat/Jahr)
+    Map<String, int> listenedPerMonth = {};
+    for (var ep in episodes.where((e) => e.listened)) {
+      if (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.length >= 7) {
+        final ym = ep.veroeffentlichungsdatum!.substring(0, 7); // yyyy-MM
+        listenedPerMonth[ym] = (listenedPerMonth[ym] ?? 0) + 1;
+      }
+    }
+
+    // Top 10 Lieblingsepisoden
+    List<Episode> top10 = List<Episode>.from(ratedEpisodes)
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+    if (top10.length > 10) top10 = top10.sublist(0, 10);
+
     statistics = {
       'totalEpisodes': totalEpisodes,
       'listenedEpisodes': listenedEpisodes,
@@ -65,6 +80,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
       'authorCounts': authorCounts,
       'yearCounts': yearCounts,
       'ratingDistribution': ratingDistribution,
+      'listenedPerMonth': listenedPerMonth,
+      'top10': top10,
     };
   }
 
@@ -94,9 +111,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
           children: [
             _buildOverviewSection(),
             SizedBox(height: 24),
-            _buildAuthorSection(),
+            _buildProgressChartSection(),
             SizedBox(height: 24),
-            _buildYearSection(),
+            _buildTop10Section(),
+            SizedBox(height: 24),
+            _buildAuthorBarChartSection(),
+            SizedBox(height: 24),
+            _buildYearBarChartSection(),
             SizedBox(height: 24),
             _buildRatingDistributionSection(),
             // Zusätzlicher Leerraum am Ende der Seite
@@ -149,38 +170,54 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
-  Widget _buildAuthorSection() {
-    final Map<String, int> authorCounts = Map<String, int>.from(statistics['authorCounts'] as Map);
-
+  Widget _buildProgressChartSection() {
+    final Map<String, int> listenedPerMonth = Map<String, int>.from(statistics['listenedPerMonth'] as Map);
+    final sortedKeys = listenedPerMonth.keys.toList()..sort();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Nach Autor',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text('Fortschritt über Zeit', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 16),
         Card(
           child: Padding(
             padding: EdgeInsets.all(16),
-            child: Column(
-              children: authorCounts.entries.map((entry) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.key,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+            child: SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: [
+                        for (int i = 0; i < sortedKeys.length; i++)
+                          FlSpot(i.toDouble(), listenedPerMonth[sortedKeys[i]]!.toDouble()),
+                      ],
+                      isCurved: true,
+                      color: Colors.blue,
+                      barWidth: 3,
+                      dotData: FlDotData(show: false),
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      '${entry.value} Folgen',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                    SizedBox(height: 16),
                   ],
-                );
-              }).toList(),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= sortedKeys.length) return Container();
+                          final label = sortedKeys[idx].replaceAll('-', '/');
+                          return Text(label, style: TextStyle(fontSize: 10));
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
+                ),
+              ),
             ),
           ),
         ),
@@ -188,38 +225,139 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
-  Widget _buildYearSection() {
-    final Map<String, int> yearCounts = Map<String, int>.from(statistics['yearCounts'] as Map);
-
+  Widget _buildTop10Section() {
+    final List<Episode> top10 = List<Episode>.from(statistics['top10'] as List);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Nach Jahr',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text('Top 10 Lieblingsepisoden', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 16),
         Card(
           child: Padding(
             padding: EdgeInsets.all(16),
             child: Column(
-              children: yearCounts.entries.map((entry) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.key,
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '${entry.value} Folgen',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                    SizedBox(height: 16),
+              children: top10.map((ep) => ListTile(
+                leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
+                    ? Image.network(ep.coverUrl!, width: 40, height: 40, fit: BoxFit.cover)
+                    : Icon(Icons.album),
+                title: Text('${ep.nummer} / ${ep.titel}'),
+                subtitle: Row(
+                  children: List.generate(5, (i) => Icon(
+                    ep.rating > i ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 16,
+                  )),
+                ),
+              )).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAuthorBarChartSection() {
+    final Map<String, int> authorCounts = Map<String, int>.from(statistics['authorCounts'] as Map);
+    final sorted = authorCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top = sorted.take(10).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Top-Autoren', style: Theme.of(context).textTheme.titleLarge),
+        SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: SizedBox(
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  barGroups: [
+                    for (int i = 0; i < top.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: top[i].value.toDouble(),
+                            color: Colors.blue,
+                          ),
+                        ],
+                      ),
                   ],
-                );
-              }).toList(),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= top.length) return Container();
+                          return Text(top[idx].key, style: TextStyle(fontSize: 10), overflow: TextOverflow.ellipsis, maxLines: 1);
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildYearBarChartSection() {
+    final Map<String, int> yearCounts = Map<String, int>.from(statistics['yearCounts'] as Map);
+    final sorted = yearCounts.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Veröffentlichungen pro Jahr', style: Theme.of(context).textTheme.titleLarge),
+        SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: SizedBox(
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  barGroups: [
+                    for (int i = 0; i < sorted.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: sorted[i].value.toDouble(),
+                            color: Colors.green,
+                          ),
+                        ],
+                      ),
+                  ],
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= sorted.length) return Container();
+                          return Text(sorted[idx].key, style: TextStyle(fontSize: 10), overflow: TextOverflow.ellipsis, maxLines: 1);
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
+                ),
+              ),
             ),
           ),
         ),
