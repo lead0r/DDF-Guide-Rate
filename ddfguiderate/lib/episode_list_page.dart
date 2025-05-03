@@ -65,13 +65,16 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     }
     final sortedAuthors = authors.toList()..sort();
     final sortedYears = years.toList()..sort((a, b) => b.compareTo(a));
-    final authorValue = sortedAuthors.contains(_selectedAuthor) ? _selectedAuthor : '';
-    final yearValue = sortedYears.contains(_selectedYear) ? _selectedYear : '';
     final ratingList = List.generate(5, (i) => 5 - i);
-    final ratingValue = ratingList.contains(_selectedRating) ? _selectedRating : -1;
     final listenedValues = ['', 'true', 'false'];
-    final listenedValue = listenedValues.contains(_selectedListened) ? _selectedListened : '';
-    showDialog(
+
+    // Lokale Kopien der Filterwerte
+    String authorValue = sortedAuthors.contains(_selectedAuthor) ? _selectedAuthor : '';
+    String yearValue = sortedYears.contains(_selectedYear) ? _selectedYear : '';
+    int ratingValue = ratingList.contains(_selectedRating) ? _selectedRating : -1;
+    String listenedValue = listenedValues.contains(_selectedListened) ? _selectedListened : '';
+
+    await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -84,7 +87,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   value: authorValue,
                   items: [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
                       sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
-                  onChanged: (v) => setState(() => _selectedAuthor = v ?? ''),
+                  onChanged: (v) => setState(() => authorValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Autor'),
                 ),
                 SizedBox(height: 8),
@@ -92,7 +95,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   value: yearValue,
                   items: [DropdownMenuItem(value: '', child: Text('Alle Jahre'))] +
                       sortedYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                  onChanged: (v) => setState(() => _selectedYear = v ?? ''),
+                  onChanged: (v) => setState(() => yearValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Jahr'),
                 ),
                 SizedBox(height: 8),
@@ -100,7 +103,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   value: ratingValue,
                   items: [DropdownMenuItem(value: -1, child: Text('Alle Bewertungen'))] +
                       ratingList.map((r) => DropdownMenuItem(value: r, child: Text('$r Sterne'))).toList(),
-                  onChanged: (v) => setState(() => _selectedRating = v ?? -1),
+                  onChanged: (v) => setState(() => ratingValue = v ?? -1),
                   decoration: InputDecoration(labelText: 'Bewertung'),
                 ),
                 SizedBox(height: 8),
@@ -111,7 +114,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                     DropdownMenuItem(value: 'true', child: Text('Gehört')),
                     DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
                   ],
-                  onChanged: (v) => setState(() => _selectedListened = v ?? ''),
+                  onChanged: (v) => setState(() => listenedValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Gehört-Status'),
                 ),
               ],
@@ -121,18 +124,24 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             TextButton(
               onPressed: () {
                 setState(() {
-                  _selectedAuthor = '';
-                  _selectedYear = '';
-                  _selectedRating = -1;
-                  _selectedListened = '';
+                  authorValue = '';
+                  yearValue = '';
+                  ratingValue = -1;
+                  listenedValue = '';
                 });
               },
               child: Text('Zurücksetzen'),
             ),
             TextButton(
               onPressed: () {
+                // Übernehme die Werte in den State der Seite
+                setState(() {
+                  _selectedAuthor = authorValue;
+                  _selectedYear = yearValue;
+                  _selectedRating = ratingValue;
+                  _selectedListened = listenedValue;
+                });
                 Navigator.pop(context);
-                setState(() {});
               },
               child: Text('Schließen'),
             ),
