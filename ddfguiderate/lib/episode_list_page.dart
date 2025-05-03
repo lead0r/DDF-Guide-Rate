@@ -87,19 +87,18 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     final ratingList = List.generate(5, (i) => 5 - i);
     final listenedValues = ['', 'true', 'false'];
 
-    // Lokale Kopien der Filterwerte, immer gültig initialisieren
-    String authorValue = sortedAuthors.contains(_selectedAuthor) ? _selectedAuthor : '';
-    String yearValue = sortedYears.contains(_selectedYear) ? _selectedYear : '';
-    int ratingValue = ratingList.contains(_selectedRating) ? _selectedRating : -1;
-    String listenedValue = listenedValues.contains(_selectedListened) ? _selectedListened : '';
+    // Lokale Kopien der Filterwerte
+    String authorValue = _selectedAuthor;
+    String yearValue = _selectedYear;
+    int ratingValue = _selectedRating;
+    String listenedValue = _selectedListened;
 
-    // Fallback auf Default, falls Wert nicht in Items-Liste
+    // Wert auf gültigen Wert mappen
     if (!sortedAuthors.contains(authorValue)) authorValue = '';
     if (!sortedYears.contains(yearValue)) yearValue = '';
     if (!ratingList.contains(ratingValue)) ratingValue = -1;
     if (!listenedValues.contains(listenedValue)) listenedValue = '';
 
-    // Dummy-Items, falls Listen leer sind
     final authorItems = sortedAuthors.isEmpty
       ? [DropdownMenuItem(value: '', child: Text('Keine Autoren'))]
       : [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
