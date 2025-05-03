@@ -424,6 +424,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                   filterYear = tempYear;
                 });
                 Navigator.of(context).pop();
+                _refreshList();
               },
               child: Text('Anwenden'),
             ),
@@ -460,7 +461,43 @@ class _EpisodeListPageState extends State<EpisodeListPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('??? Guide'),
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final showScrollButtons = constraints.maxWidth < 200;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (showScrollButtons)
+                  IconButton(
+                    icon: Icon(Icons.chevron_left),
+                    onPressed: () {
+                      if (_tabController.index > 0) {
+                        _tabController.animateTo(_tabController.index - 1);
+                        _refreshList();
+                      }
+                    },
+                  ),
+                Flexible(
+                  child: Text(
+                    '???',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (showScrollButtons)
+                  IconButton(
+                    icon: Icon(Icons.chevron_right),
+                    onPressed: () {
+                      if (_tabController.index < 2) {
+                        _tabController.animateTo(_tabController.index + 1);
+                        _refreshList();
+                      }
+                    },
+                  ),
+              ],
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.backup),
@@ -512,129 +549,369 @@ class _EpisodeListPageState extends State<EpisodeListPage>
           onTap: (_) => _refreshList(),
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Suchen…',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() => searchQuery = value);
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity != null) {
+            if (details.primaryVelocity! < -100) {
+              // Swipe nach links
+              if (_tabController.index < 2) {
+                _tabController.animateTo(_tabController.index + 1);
                 _refreshList();
-              },
-            ),
-          ),
-          if (futureEpisodes.isNotEmpty)
+              }
+            } else if (details.primaryVelocity! > 100) {
+              // Swipe nach rechts
+              if (_tabController.index > 0) {
+                _tabController.animateTo(_tabController.index - 1);
+                _refreshList();
+              }
+            }
+          }
+        },
+        child: Column(
+          children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              child: GestureDetector(
-                onTap: () => setState(() => _showFutureEpisodes = !_showFutureEpisodes),
-                child: Row(
-                  children: [
-                    Icon(_showFutureEpisodes ? Icons.expand_less : Icons.expand_more),
-                    SizedBox(width: 8),
-                    Text('Zukünftige Folgen anzeigen (${futureEpisodes.length})', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
+              padding: EdgeInsets.all(8),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Suchen…',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
                 ),
-              ),
-            ),
-          if (_showFutureEpisodes && futureEpisodes.isNotEmpty)
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: filteredFuture.length,
-                itemBuilder: (context, index) {
-                  final ep = filteredFuture[index];
-                  return ListTile(
-                    leading: Hero(
-                      tag: 'episode_${ep.id}',
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: CachedNetworkImage(
-                          imageUrl: ep.coverUrl ?? '',
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.grey[300],
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.grey[300],
-                            child: Center(
-                              child: Text(
-                                'NEW',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    title: Text('${ep.nummer} / ${ep.titel}'),
-                    subtitle: Text('Erscheint am: ${ep.veroeffentlichungsdatum ?? ''}'),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) =>
-                              EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
-                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            );
-                          },
-                          transitionDuration: Duration(milliseconds: 300),
-                        ),
-                      );
-                    },
-                  );
+                onChanged: (value) {
+                  setState(() => searchQuery = value);
+                  _refreshList();
                 },
               ),
             ),
-          Expanded(
-            child: allEpisodes.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                    onRefresh: _refreshList,
-                    child: isTablet
-                        ? GridView.builder(
-                            controller: _scrollController,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.5,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                            ),
-                            padding: EdgeInsets.all(8),
-                            itemCount: filteredRegular.length + 1,
-                            itemBuilder: (context, index) {
-                              if (index == filteredRegular.length) {
-                                return _isLoading
-                                    ? Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: CircularProgressIndicator(),
+            if (futureEpisodes.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                child: GestureDetector(
+                  onTap: () => setState(() => _showFutureEpisodes = !_showFutureEpisodes),
+                  child: Row(
+                    children: [
+                      Icon(_showFutureEpisodes ? Icons.expand_less : Icons.expand_more),
+                      SizedBox(width: 8),
+                      Text('Zukünftige Folgen anzeigen (${futureEpisodes.length})', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            if (_showFutureEpisodes && futureEpisodes.isNotEmpty)
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: filteredFuture.length,
+                  itemBuilder: (context, index) {
+                    final ep = filteredFuture[index];
+                    return ListTile(
+                      leading: Hero(
+                        tag: 'episode_${ep.id}',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: CachedNetworkImage(
+                            imageUrl: ep.coverUrl ?? '',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => ep.isFutureRelease
+                                ? Container(
+                                    width: 50,
+                                    height: 50,
+                                    color: Colors.grey[300],
+                                    child: Center(
+                                      child: Text(
+                                        'NEW',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
                                         ),
-                                      )
-                                    : SizedBox.shrink();
-                              }
-                              final ep = filteredRegular[index];
-                              return Card(
-                                child: InkWell(
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    width: 50,
+                                    height: 50,
+                                    color: Colors.grey[300],
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),
+                            errorWidget: (context, url, error) => ep.isFutureRelease
+                                ? Container(
+                                    width: 50,
+                                    height: 50,
+                                    color: Colors.grey[300],
+                                    child: Center(
+                                      child: Text(
+                                        'NEW',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Icon(Icons.broken_image),
+                          ),
+                        ),
+                      ),
+                      title: Text('${ep.nummer} / ${ep.titel}'),
+                      subtitle: Text('Erscheint am: ${ep.veroeffentlichungsdatum ?? ''}'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            transitionDuration: Duration(milliseconds: 300),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            Expanded(
+              child: allEpisodes.isEmpty
+                  ? Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _refreshList,
+                      child: isTablet
+                          ? GridView.builder(
+                              controller: _scrollController,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 1.5,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                              padding: EdgeInsets.all(8),
+                              itemCount: filteredRegular.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == filteredRegular.length) {
+                                  return _isLoading
+                                      ? Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        )
+                                      : SizedBox.shrink();
+                                }
+                                final ep = filteredRegular[index];
+                                return Card(
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        PageRouteBuilder(
+                                          pageBuilder: (context, animation, secondaryAnimation) =>
+                                              EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
+                                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                            return FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            );
+                                          },
+                                          transitionDuration: Duration(milliseconds: 300),
+                                        ),
+                                      );
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                                          child: CachedNetworkImage(
+                                            imageUrl: ep.coverUrl ?? '',
+                                            height: 120,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) => ep.isFutureRelease
+                                                ? Container(
+                                                    width: 50,
+                                                    height: 50,
+                                                    color: Colors.grey[300],
+                                                    child: Center(
+                                                      child: Text(
+                                                        'NEW',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.blue,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Container(
+                                                    width: 50,
+                                                    height: 50,
+                                                    color: Colors.grey[300],
+                                                    child: Center(child: CircularProgressIndicator()),
+                                                  ),
+                                            errorWidget: (context, url, error) => ep.isFutureRelease
+                                                ? Container(
+                                                    width: 50,
+                                                    height: 50,
+                                                    color: Colors.grey[300],
+                                                    child: Center(
+                                                      child: Text(
+                                                        'NEW',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.blue,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Icon(Icons.broken_image, size: 48),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(8),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${ep.nummer} / ${ep.titel}',
+                                                style: Theme.of(context).textTheme.titleMedium,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 8),
+                                              Row(
+                                                children: [
+                                                  Row(
+                                                    children: List.generate(5, (index) {
+                                                      int starIndex = index + 1;
+                                                      return Icon(
+                                                        ep.rating >= starIndex
+                                                            ? Icons.star
+                                                            : Icons.star_border,
+                                                        color: Colors.amber,
+                                                        size: 16,
+                                                      );
+                                                    }),
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Icon(
+                                                    ep.listened
+                                                        ? Icons.check_circle
+                                                        : Icons.radio_button_unchecked,
+                                                    color: ep.listened ? Colors.green : Colors.grey,
+                                                    size: 16,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              itemCount: filteredRegular.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == filteredRegular.length) {
+                                  return _isLoading
+                                      ? Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        )
+                                      : SizedBox.shrink();
+                                }
+                                final ep = filteredRegular[index];
+                                return ListTile(
+                                  leading: Hero(
+                                    tag: 'episode_${ep.id}',
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: CachedNetworkImage(
+                                        imageUrl: ep.coverUrl ?? '',
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => ep.isFutureRelease
+                                            ? Container(
+                                                width: 50,
+                                                height: 50,
+                                                color: Colors.grey[300],
+                                                child: Center(
+                                                  child: Text(
+                                                    'NEW',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.blue,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : Container(
+                                                width: 50,
+                                                height: 50,
+                                                color: Colors.grey[300],
+                                                child: Center(child: CircularProgressIndicator()),
+                                              ),
+                                        errorWidget: (context, url, error) => ep.isFutureRelease
+                                            ? Container(
+                                                width: 50,
+                                                height: 50,
+                                                color: Colors.grey[300],
+                                                child: Center(
+                                                  child: Text(
+                                                    'NEW',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.blue,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : Icon(Icons.broken_image),
+                                      ),
+                                    ),
+                                  ),
+                                  title: Text('${ep.nummer} / ${ep.titel}'),
+                                  subtitle: Row(
+                                    children: [
+                                      Row(
+                                        children: List.generate(5, (index) {
+                                          int starIndex = index + 1;
+                                          return Icon(
+                                            ep.rating >= starIndex
+                                                ? Icons.star
+                                                : Icons.star_border,
+                                            color: Colors.amber,
+                                            size: 16,
+                                          );
+                                        }),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Icon(
+                                        ep.listened
+                                            ? Icons.check_circle
+                                            : Icons.radio_button_unchecked,
+                                        color: ep.listened ? Colors.green : Colors.grey,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
                                   onTap: () {
                                     Navigator.push(
                                       context,
@@ -651,182 +928,13 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                       ),
                                     );
                                   },
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                                        child: CachedNetworkImage(
-                                          imageUrl: ep.coverUrl ?? '',
-                                          height: 120,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) => Container(
-                                            height: 120,
-                                            color: Colors.grey[300],
-                                            child: Center(child: CircularProgressIndicator()),
-                                          ),
-                                          errorWidget: (context, url, error) => Container(
-                                            height: 120,
-                                            color: Colors.grey[300],
-                                            child: Center(
-                                              child: ep.isFutureRelease
-                                                  ? Text(
-                                                      'NEW',
-                                                      style: TextStyle(
-                                                        fontSize: 24,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.blue,
-                                                      ),
-                                                    )
-                                                  : Icon(Icons.broken_image, size: 48),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.all(8),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${ep.nummer} / ${ep.titel}',
-                                              style: Theme.of(context).textTheme.titleMedium,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            SizedBox(height: 8),
-                                            Row(
-                                              children: [
-                                                Row(
-                                                  children: List.generate(5, (index) {
-                                                    int starIndex = index + 1;
-                                                    return Icon(
-                                                      ep.rating >= starIndex
-                                                          ? Icons.star
-                                                          : Icons.star_border,
-                                                      color: Colors.amber,
-                                                      size: 16,
-                                                    );
-                                                  }),
-                                                ),
-                                                SizedBox(width: 8),
-                                                Icon(
-                                                  ep.listened
-                                                      ? Icons.check_circle
-                                                      : Icons.radio_button_unchecked,
-                                                  color: ep.listened ? Colors.green : Colors.grey,
-                                                  size: 16,
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            itemCount: filteredRegular.length + 1,
-                            itemBuilder: (context, index) {
-                              if (index == filteredRegular.length) {
-                                return _isLoading
-                                    ? Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      )
-                                    : SizedBox.shrink();
-                              }
-                              final ep = filteredRegular[index];
-                              return ListTile(
-                                leading: Hero(
-                                  tag: 'episode_${ep.id}',
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: CachedNetworkImage(
-                                      imageUrl: ep.coverUrl ?? '',
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        width: 50,
-                                        height: 50,
-                                        color: Colors.grey[300],
-                                        child: Center(child: CircularProgressIndicator()),
-                                      ),
-                                      errorWidget: (context, url, error) => Container(
-                                        width: 50,
-                                        height: 50,
-                                        color: Colors.grey[300],
-                                        child: Center(
-                                          child: ep.isFutureRelease
-                                              ? Text(
-                                                  'NEW',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.blue,
-                                                  ),
-                                                )
-                                              : Icon(Icons.broken_image),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                title: Text('${ep.nummer} / ${ep.titel}'),
-                                subtitle: Row(
-                                  children: [
-                                    Row(
-                                      children: List.generate(5, (index) {
-                                        int starIndex = index + 1;
-                                        return Icon(
-                                          ep.rating >= starIndex
-                                              ? Icons.star
-                                              : Icons.star_border,
-                                          color: Colors.amber,
-                                          size: 16,
-                                        );
-                                      }),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Icon(
-                                      ep.listened
-                                          ? Icons.check_circle
-                                          : Icons.radio_button_unchecked,
-                                      color: ep.listened ? Colors.green : Colors.grey,
-                                      size: 16,
-                                    ),
-                                  ],
-                                ),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) =>
-                                          EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
-                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                        return FadeTransition(
-                                          opacity: animation,
-                                          child: child,
-                                        );
-                                      },
-                                      transitionDuration: Duration(milliseconds: 300),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                  ),
-          ),
-        ],
+                                );
+                              },
+                            ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

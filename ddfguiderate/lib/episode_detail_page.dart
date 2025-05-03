@@ -9,6 +9,11 @@ import 'database_service.dart';
 import 'package:intl/intl.dart';
 import 'spotify_id_resolver.dart';
 import 'settings_page.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class EpisodeDetailPage extends StatefulWidget {
   final Episode episode;
@@ -27,6 +32,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   String? _noteInitialValue;
   bool _isEditingNote = false;
   final DatabaseService _dbService = DatabaseService();
+  final GlobalKey _sharePicKey = GlobalKey();
 
   @override
   void initState() {
@@ -281,6 +287,21 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ungültiger Link: $url')), 
       );
+    }
+  }
+
+  Future<void> _sharePic() async {
+    try {
+      RenderRepaintBoundary boundary = _sharePicKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = await File('${tempDir.path}/share_pic.png').create();
+      await file.writeAsBytes(pngBytes);
+      await Share.shareFiles([file.path], text: 'Meine Bewertung zu "${episode.titel}"');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Fehler beim Teilen des Bildes.')));
     }
   }
 
@@ -539,6 +560,37 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               ),
             ),
             SizedBox(height: 16),
+            if (episode.rating > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.share),
+                        label: Text('Bewertung teilen'),
+                        onPressed: () {
+                          final text = 'Ich habe "${episode.titel}" (#${episode.nummer}) mit ${episode.rating} Sternen bewertet.';
+                          Share.share(text);
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.image),
+                        label: Text('Als Bild teilen'),
+                        onPressed: _sharePic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            SizedBox(height: 16),
+            RepaintBoundary(
+              key: _sharePicKey,
+              child: _buildSharePicCard(),
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -550,6 +602,69 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               ],
             ),
             SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSharePicCard() {
+    return Card(
+      color: Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 340,
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (episode.coverUrl != null && episode.coverUrl!.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  episode.coverUrl!,
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            SizedBox(height: 16),
+            Text(
+              episode.titel,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Folge #${episode.nummer}',
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+            SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (i) => Icon(
+                episode.rating > i ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+                size: 28,
+              )),
+            ),
+            if (episode.note != null && episode.note!.isNotEmpty) ...[
+              SizedBox(height: 12),
+              Text(
+                'Notiz:',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+              SizedBox(height: 4),
+              Text(
+                episode.note!,
+                style: TextStyle(color: Colors.black87),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            SizedBox(height: 16),
+            Text('DDF Guide', style: TextStyle(fontSize: 14, color: Colors.blueGrey)),
           ],
         ),
       ),
