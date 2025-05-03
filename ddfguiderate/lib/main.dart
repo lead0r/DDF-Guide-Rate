@@ -33,8 +33,7 @@ class _MyAppState extends State<MyApp> {
 
   void toggleTheme() async {
     setState(() {
-      _themeMode =
-      _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', _themeMode == ThemeMode.dark);
@@ -43,11 +42,20 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '??? Guide',
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
+      title: 'Die drei ??? Guide',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.light,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
       themeMode: _themeMode,
       home: EpisodeListPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

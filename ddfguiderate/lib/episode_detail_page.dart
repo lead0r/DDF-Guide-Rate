@@ -46,7 +46,12 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
 
   void setRating(int rating) {
     setState(() {
-      episode.rating = rating;
+      // Wenn der Benutzer auf den bereits ausgewählten Stern klickt, setze die Bewertung zurück
+      if (episode.rating == rating) {
+        episode.rating = 0;
+      } else {
+        episode.rating = rating;
+      }
     });
     _saveState();
   }
@@ -59,13 +64,40 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   }
 
   void _openSpotify() async {
-    final url = 'https://open.spotify.com/album/${episode.spotifyAlbumId}';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Spotify kann nicht geöffnet werden')),
+    // Zuerst versuchen wir, die Spotify-App zu öffnen
+    final spotifyUri = Uri.parse('spotify:album:${episode.spotifyAlbumId}');
+
+    // Als Fallback haben wir die Web-URL
+    final webUrl = Uri.parse('https://open.spotify.com/album/${episode.spotifyAlbumId}');
+
+    try {
+      // Versuche zuerst die App zu öffnen
+      final appLaunched = await launchUrl(
+        spotifyUri,
+        mode: LaunchMode.externalApplication,
       );
+
+      // Wenn das nicht klappt, öffne im Browser
+      if (!appLaunched) {
+        await launchUrl(
+          webUrl,
+          mode: LaunchMode.externalApplication,
+        );
+      }
+    } catch (e) {
+      // Wenn ein Fehler auftritt, zeige eine Fehlermeldung
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Spotify kann nicht geöffnet werden: ${e.toString()}')),
+      );
+    }
+  }
+
+  String formatDate(String date) {
+    try {
+      final parsedDate = DateTime.parse(date);
+      return '${parsedDate.day.toString().padLeft(2, '0')}.${parsedDate.month.toString().padLeft(2, '0')}.${parsedDate.year}';
+    } catch (e) {
+      return date;
     }
   }
 
@@ -107,6 +139,8 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             SizedBox(height: 8),
+            Text('Veröffentlichung: ${formatDate(episode.releaseDate)}'),
+            SizedBox(height: 8),
             Text(episode.description),
             SizedBox(height: 16),
             Text('Autor: ${episode.author}',
@@ -116,8 +150,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 style: TextStyle(fontWeight: FontWeight.bold)),
             ...rolesToShow.map<Widget>((role) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 2.0),
-              child:
-              Text('${role['Character']}: ${role['Speaker']}'),
+              child: Text('${role['Character']}: ${role['Speaker']}'),
             )),
             if (episode.roles.length > 3)
               TextButton(
@@ -126,7 +159,8 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                     showAllRoles = !showAllRoles;
                   });
                 },
-                child: Text(showAllRoles ? 'Weniger anzeigen' : 'Alle anzeigen'),
+                child:
+                Text(showAllRoles ? 'Weniger anzeigen' : 'Alle anzeigen'),
               ),
             SizedBox(height: 16),
             Row(
@@ -154,15 +188,14 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               ],
             ),
             if (episode.spotifyAlbumId.isNotEmpty)
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: _openSpotify,
-                icon: Icon(Icons.play_arrow),
-                label: Text('In Spotify öffnen'),
+                child: Text('In Spotify öffnen'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size(double.infinity, 50),
                 ),
               ),
-            SizedBox(height: 32), // Abstand, damit nichts abgeschnitten wird
+            SizedBox(height: 32),
           ],
         ),
       ),
