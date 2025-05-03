@@ -118,6 +118,8 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
     ];
 
+    // DEBUG-Ausgaben für Dropdowns
+    print('authorItems: \\${authorItems.map((e) => e.value)}, authorValue: $authorValue');
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -134,6 +136,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   decoration: InputDecoration(labelText: 'Autor'),
                 ),
                 SizedBox(height: 8),
+                print('yearItems: \\${yearItems.map((e) => e.value)}, yearValue: $yearValue');
                 DropdownButtonFormField<String>(
                   value: yearItems.any((item) => item.value == yearValue) ? yearValue : yearItems.first.value,
                   items: yearItems,
@@ -141,6 +144,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   decoration: InputDecoration(labelText: 'Jahr'),
                 ),
                 SizedBox(height: 8),
+                print('ratingItems: \\${ratingItems.map((e) => e.value)}, ratingValue: $ratingValue');
                 DropdownButtonFormField<int>(
                   value: ratingItems.any((item) => item.value == ratingValue) ? ratingValue : ratingItems.first.value,
                   items: ratingItems,
@@ -148,6 +152,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   decoration: InputDecoration(labelText: 'Bewertung'),
                 ),
                 SizedBox(height: 8),
+                print('listenedItems: \\${listenedItems.map((e) => e.value)}, listenedValue: $listenedValue');
                 DropdownButtonFormField<String>(
                   value: listenedItems.any((item) => item.value == listenedValue) ? listenedValue : listenedItems.first.value,
                   items: listenedItems,
