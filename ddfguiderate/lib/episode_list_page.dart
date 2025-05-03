@@ -102,10 +102,17 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     if (!ratingList.contains(ratingValue)) ratingValue = -1;
     if (!listenedValues.contains(listenedValue)) listenedValue = '';
 
+    // Autoren-Dropdown mit Overflow-Schutz:
     final authorItems = sortedAuthors.isEmpty
       ? [DropdownMenuItem(value: '', child: Text('Keine Autoren'))]
       : [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
-        sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList();
+        sortedAuthors.map((a) => DropdownMenuItem(
+          value: a,
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 180),
+            child: Text(a, overflow: TextOverflow.ellipsis),
+          ),
+        )).toList();
 
     final yearItems = sortedYears.isEmpty
       ? [DropdownMenuItem(value: '', child: Text('Keine Jahre'))]
@@ -180,7 +187,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             ),
             TextButton(
               onPressed: () {
-                // Übernehme die Werte in den State der Seite
                 setState(() {
                   _selectedAuthor = authorValue;
                   _selectedYear = yearValue;
