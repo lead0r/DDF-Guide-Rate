@@ -99,11 +99,12 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: CachedNetworkImage(
-                    ep.coverUrl!, height: 200,
+                    imageUrl: ep.coverUrl!,
+                    height: 200,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => CircularProgressIndicator(),
                     errorWidget: (context, url, error) => Icon(Icons.broken_image),
-                                    ),
+                  ),
                 ),
               ),
             SizedBox(height: 16),
