@@ -118,6 +118,9 @@ class DatabaseService {
       );
       await _logHistory(episodeId);
     }
+    print('[DEBUG] updateEpisodeState: Nach Insert/Update');
+    final all = await getAllStates();
+    print('[DEBUG] getAllStates (nach Update): $all');
   }
 
   Future<void> _logHistory(String episodeId) async {
