@@ -37,9 +37,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       rating: _rating,
       listened: _listened,
     );
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context, true);
-    }
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gespeichert!')),
