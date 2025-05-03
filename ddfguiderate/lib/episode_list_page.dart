@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
+import 'episode_data_service.dart';
+import 'database_service.dart';
 
 import 'episode.dart';
 import 'episode_detail_page.dart';
@@ -47,6 +49,9 @@ class _EpisodeListPageState extends State<EpisodeListPage>
 
   SortOption currentSortOption = SortOption.numberDesc;
 
+  final EpisodeDataService _episodeDataService = EpisodeDataService();
+  final DatabaseService _dbService = DatabaseService();
+
   @override
   void initState() {
     super.initState();
@@ -69,20 +74,62 @@ class _EpisodeListPageState extends State<EpisodeListPage>
     }
   }
 
+  Future<void> _initialize() async {
+    setState(() => _isLoading = true);
+    // Lade Episoden für alle Tabs
+    final mainEpisodes = await _episodeDataService.fetchAllMainEpisodes();
+    final kidsEpisodes = await _episodeDataService.fetchKidsEpisodes();
+    final dr3iEpisodes = await _episodeDataService.fetchDr3iEpisodes();
+    // Lade alle States aus der DB
+    final allStates = await _dbService.getAllStates();
+    // Mappe State auf Episoden
+    void mergeState(List<Episode> episodes) {
+      for (var ep in episodes) {
+        final state = allStates.firstWhere(
+          (s) => s['episode_id'] == ep.id,
+          orElse: () => {},
+        );
+        if (state.isNotEmpty) {
+          ep.rating = state['rating'] ?? 0;
+          ep.listened = (state['listened'] ?? 0) == 1;
+          ep.note = state['note'];
+        }
+      }
+    }
+    mergeState(mainEpisodes);
+    mergeState(kidsEpisodes);
+    mergeState(dr3iEpisodes);
+    setState(() {
+      allEpisodes = mainEpisodes;
+      _kidsEpisodes = kidsEpisodes;
+      _dr3iEpisodes = dr3iEpisodes;
+      _isLoading = false;
+    });
+    await _refreshList();
+
+    // Vereinfachte Benachrichtigungsfunktion
+    await NotificationService.initialize();
+    await NotificationService.checkForNewEpisodes(allEpisodes);
+    await NotificationService.scheduleReminder();
+
+    // Optional: Zeige Benachrichtigung für neue Episoden an
+    // Dies würde eine BuildContext benötigen, was hier nicht einfach verfügbar ist
+    // Du könntest es stattdessen im build-Methode oder nach einem kurzen Verzögerung tun
+  }
+
+  // Neue Felder für die anderen Tabs
+  List<Episode> _kidsEpisodes = [];
+  List<Episode> _dr3iEpisodes = [];
+
   Future<void> _loadMoreItems() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
-    
-    await Future.delayed(Duration(milliseconds: 100)); // Prevent rapid multiple calls
-    
+    await Future.delayed(Duration(milliseconds: 100));
+    final currentEpisodes = getCurrentTabEpisodes();
     final nextPageItems = await compute(_getPageItems, _FilterSortParams(
-      allEpisodes: allEpisodes,
+      allEpisodes: currentEpisodes,
       filterParams: _FilterParams(
-        interpreter: _tabController.index == 0
-            ? 'Die drei ???'
-            : _tabController.index == 1
-            ? 'Die drei ??? Kids'
-            : 'DiE DR3i',
+        interpreter: '', // nicht mehr benötigt
         listened: filterListened,
         stars: filterStars,
         minStars: filterMinStars,
@@ -95,7 +142,6 @@ class _EpisodeListPageState extends State<EpisodeListPage>
       page: _currentPage,
       itemsPerPage: _itemsPerPage,
     ));
-
     setState(() {
       _filteredEpisodes.addAll(nextPageItems);
       _currentPage++;
@@ -111,49 +157,10 @@ class _EpisodeListPageState extends State<EpisodeListPage>
     await _loadMoreItems();
   }
 
-  Future<void> _initialize() async {
-    final loadedEpisodes = await loadEpisodes();
-    setState(() {
-      allEpisodes = loadedEpisodes;
-    });
-    await _loadStates();
-    await _refreshList();
-
-    // Vereinfachte Benachrichtigungsfunktion
-    await NotificationService.initialize();
-    await NotificationService.checkForNewEpisodes(allEpisodes);
-    await NotificationService.scheduleReminder();
-
-    // Optional: Zeige Benachrichtigung für neue Episoden an
-    // Dies würde eine BuildContext benötigen, was hier nicht einfach verfügbar ist
-    // Du könntest es stattdessen im build-Methode oder nach einem kurzen Verzögerung tun
-  }
-
-  Future<List<Episode>> loadEpisodes() async {
-    final String response =
-    await rootBundle.loadString('assets/data/dtos.json');
-    final List<dynamic> data = json.decode(response);
-    final episodes = data.map((json) => Episode.fromJson(json)).toList();
-    episodes.sort((a, b) => b.numberEuropa.compareTo(a.numberEuropa));
-    return episodes;
-  }
-
-  Future<void> _loadStates() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ratingsJson = prefs.getString('episode_ratings');
-    final listenedJson = prefs.getString('episode_listened');
-
-    if (ratingsJson != null || listenedJson != null) {
-      final updatedEpisodes = await compute(_updateEpisodesState, _StateUpdateParams(
-        episodes: allEpisodes,
-        ratingsJson: ratingsJson,
-        listenedJson: listenedJson,
-      ));
-
-      setState(() {
-        allEpisodes = updatedEpisodes;
-      });
-    }
+  List<Episode> getCurrentTabEpisodes() {
+    if (_tabController.index == 0) return allEpisodes;
+    if (_tabController.index == 1) return _kidsEpisodes;
+    return _dr3iEpisodes;
   }
 
   void _openSortDialog() {

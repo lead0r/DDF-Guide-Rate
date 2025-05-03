@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'episode.dart';
 import 'main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'database_service.dart';
 
 class EpisodeDetailPage extends StatefulWidget {
   final Episode episode;
@@ -21,6 +22,8 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   bool showAllRoles = false;
   TextEditingController? _noteController;
   String? _noteInitialValue;
+  bool _isEditingNote = false;
+  final DatabaseService _dbService = DatabaseService();
 
   @override
   void initState() {
@@ -30,17 +33,67 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   }
 
   Future<void> _loadNote() async {
-    final prefs = await SharedPreferences.getInstance();
-    final note = prefs.getString('note_${episode.id}') ?? '';
+    final state = await _dbService.getEpisodeState(episode.id);
+    final note = state?['note'] ?? '';
     setState(() {
       _noteInitialValue = note;
       _noteController = TextEditingController(text: note);
+      episode.note = note;
     });
   }
 
   Future<void> _saveNote(String value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('note_${episode.id}', value);
+    await _dbService.updateEpisodeState(episode.id, note: value);
+    setState(() {
+      episode.note = value;
+      _noteInitialValue = value;
+      _isEditingNote = false;
+    });
+  }
+
+  Future<void> _deleteNote() async {
+    final oldNote = _noteController?.text ?? '';
+    await _dbService.updateEpisodeState(episode.id, note: '');
+    setState(() {
+      _noteController?.text = '';
+      episode.note = '';
+      _isEditingNote = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Notiz gelöscht'),
+        action: SnackBarAction(
+          label: 'Rückgängig',
+          onPressed: () async {
+            await _dbService.updateEpisodeState(episode.id, note: oldNote);
+            setState(() {
+              _noteController?.text = oldNote;
+              episode.note = oldNote;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _startEditNote() {
+    setState(() {
+      _isEditingNote = true;
+    });
+  }
+
+  Future<void> _saveRating(int rating) async {
+    await _dbService.updateEpisodeState(episode.id, rating: rating);
+    setState(() {
+      episode.rating = rating;
+    });
+  }
+
+  Future<void> _saveListened(bool listened) async {
+    await _dbService.updateEpisodeState(episode.id, listened: listened);
+    setState(() {
+      episode.listened = listened;
+    });
   }
 
   @override
@@ -242,6 +295,70 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ),
               ),
             ),
+            if (episode.spotifyAlbumId.isNotEmpty) ...[
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _openSpotify,
+                child: Text('In Spotify öffnen'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+            ],
+            if (_noteController != null) ...[
+              SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                tooltip: 'Bearbeiten',
+                                onPressed: _isEditingNote ? null : _startEditNote,
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                tooltip: 'Löschen',
+                                onPressed: episode.note?.isNotEmpty == true ? _deleteNote : null,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        controller: _noteController,
+                        minLines: 2,
+                        maxLines: 6,
+                        enabled: _isEditingNote,
+                        decoration: InputDecoration(
+                          hintText: 'Deine Notiz zu dieser Folge ...',
+                          border: OutlineInputBorder(),
+                        ),
+                        onSubmitted: (value) => _saveNote(value),
+                        onEditingComplete: () => _saveNote(_noteController!.text),
+                      ),
+                      if (_isEditingNote)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            child: Text('Speichern'),
+                            onPressed: () => _saveNote(_noteController!.text),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             SizedBox(height: 16),
             Card(
               child: Padding(
@@ -264,7 +381,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                                 : Icons.star_border,
                           ),
                           color: Colors.amber,
-                          onPressed: () => setRating(starIndex),
+                          onPressed: () => _saveRating(starIndex),
                         );
                       }),
                     ),
@@ -274,7 +391,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                         Text('Gehört: '),
                         Switch(
                           value: episode.listened,
-                          onChanged: (value) => toggleListened(),
+                          onChanged: (value) => _saveListened(value),
                         ),
                       ],
                     ),
@@ -282,41 +399,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ),
               ),
             ),
-            if (episode.spotifyAlbumId.isNotEmpty) ...[
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _openSpotify,
-                child: Text('In Spotify öffnen'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                ),
-              ),
-            ],
-            if (_noteController != null) ...[
-              SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
-                      SizedBox(height: 8),
-                      TextField(
-                        controller: _noteController,
-                        minLines: 2,
-                        maxLines: 6,
-                        decoration: InputDecoration(
-                          hintText: 'Deine Notiz zu dieser Folge ...',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (value) => _saveNote(value),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
             SizedBox(height: 32),
           ],
         ),
