@@ -64,10 +64,17 @@ class _MyAppState extends State<MyApp> {
         error: Color(0xFFE53935),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Color(0xFF1E88E5),
+        backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+      ),
+      tabBarTheme: TabBarTheme(
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.grey,
+        indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(color: Colors.white, width: 2),
+        ),
       ),
       cardTheme: CardTheme(
         elevation: 2,
@@ -124,6 +131,13 @@ class _MyAppState extends State<MyApp> {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+      ),
+      tabBarTheme: TabBarTheme(
+        labelColor: Color(0xFF64B5F6),
+        unselectedLabelColor: Colors.grey,
+        indicator: UnderlineTabIndicator(
+          borderSide: BorderSide(color: Color(0xFF64B5F6), width: 2),
+        ),
       ),
       cardTheme: CardTheme(
         elevation: 2,

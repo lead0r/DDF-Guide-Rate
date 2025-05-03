@@ -129,23 +129,22 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
           children: [
             Hero(
               tag: 'episode_${episode.id}',
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: CachedNetworkImage(
-                  imageUrl: episode.image,
-                  width: double.infinity,
-                  height: isTablet ? 300 : 200,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    width: double.infinity,
-                    height: isTablet ? 300 : 200,
-                    color: Colors.grey[300],
-                    child: Center(child: CircularProgressIndicator()),
+              child: Container(
+                color: Colors.black,
+                width: double.infinity,
+                padding: EdgeInsets.all(8),
+                child: AspectRatio(
+                  aspectRatio: 1.5,
+                  child: CachedNetworkImage(
+                    imageUrl: episode.image,
+                    fit: BoxFit.contain,
+                    fadeInDuration: Duration(milliseconds: 100),
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[300],
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Icon(Icons.broken_image, size: 100),
                   ),
-                  errorWidget: (context, url, error) => Icon(Icons.broken_image, size: 100),
                 ),
               ),
             ),

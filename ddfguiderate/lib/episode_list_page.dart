@@ -117,6 +117,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
       allEpisodes = loadedEpisodes;
     });
     await _loadStates();
+    await _refreshList();
 
     // Vereinfachte Benachrichtigungsfunktion
     await NotificationService.initialize();
