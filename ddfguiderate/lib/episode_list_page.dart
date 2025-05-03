@@ -77,7 +77,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     final authors = <String>{};
     final years = <String>{};
     for (var ep in _mainEpisodes) {
-      authors.add(ep.autor);
+      if (ep.autor.isNotEmpty) {
+        ep.autor.split(',').map((a) => a.trim()).forEach(authors.add);
+      }
       if (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.length >= 4) {
         years.add(ep.veroeffentlichungsdatum!.substring(0, 4));
       }
@@ -185,6 +187,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   _selectedRating = ratingValue;
                   _selectedListened = listenedValue;
                 });
+                Navigator.pop(context);
+              },
+              child: Text('Anwenden'),
+            ),
+            TextButton(
+              onPressed: () {
                 Navigator.pop(context);
               },
               child: Text('Schließen'),
