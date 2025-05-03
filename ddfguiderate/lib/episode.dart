@@ -96,7 +96,7 @@ class Episode {
       gesamtbeschreibung: json['gesamtbeschreibung'],
       hoerspielskriptautor: json['hörspielskriptautor'],
       veroeffentlichungsdatum: json['veröffentlichungsdatum'],
-      coverUrl: json['links']?['cover'] ?? json['cover_itunes'] ?? json['coverUrl'],
+      coverUrl: json['links']?['cover'] ?? json['links']?['cover_itunes'] ?? json['coverUrl'],
       serieTyp: 'Kids',
       sprechrollen: json['sprechrollen'],
       spotifyUrl: json['spotify'],
