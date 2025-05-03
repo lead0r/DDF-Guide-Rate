@@ -544,7 +544,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                       context,
                                       PageRouteBuilder(
                                         pageBuilder: (context, animation, secondaryAnimation) =>
-                                            EpisodeDetailPage(episode: ep, onUpdate: _loadStates),
+                                            EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
                                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                           return FadeTransition(
                                             opacity: animation,
@@ -686,7 +686,7 @@ class _EpisodeListPageState extends State<EpisodeListPage>
                                     context,
                                     PageRouteBuilder(
                                       pageBuilder: (context, animation, secondaryAnimation) =>
-                                          EpisodeDetailPage(episode: ep, onUpdate: _loadStates),
+                                          EpisodeDetailPage(episode: ep, onUpdate: _loadEpisodes),
                                       transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                         return FadeTransition(
                                           opacity: animation,
