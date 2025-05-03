@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'episode.dart';
 import 'main.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class EpisodeDetailPage extends StatefulWidget {
   final Episode episode;
@@ -126,12 +127,17 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.network(
-              episode.image,
+            CachedNetworkImage(
+              imageUrl: episode.image,
               width: double.infinity,
               fit: BoxFit.fitWidth,
-              errorBuilder: (context, error, stackTrace) =>
-                  Icon(Icons.broken_image, size: 100),
+              placeholder: (context, url) => Container(
+                width: double.infinity,
+                height: 200,
+                color: Colors.grey[300],
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              errorWidget: (context, url, error) => Icon(Icons.broken_image, size: 100),
             ),
             SizedBox(height: 16),
             Text(

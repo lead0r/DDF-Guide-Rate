@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'episode.dart';
 import 'episode_detail_page.dart';
@@ -532,57 +533,64 @@ class _EpisodeListPageState extends State<EpisodeListPage>
           Expanded(
             child: allEpisodes.isEmpty
                 ? Center(child: CircularProgressIndicator())
-                : ListView(
-              children: filteredEpisodes.map((ep) {
-                return ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      ep.image,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.broken_image),
-                    ),
-                  ),
-                  title: Text('${ep.numberEuropa} / ${ep.title}'),
-                  subtitle: Row(
-                    children: [
-                      Row(
-                        children: List.generate(5, (index) {
-                          int starIndex = index + 1;
-                          return Icon(
-                            ep.rating >= starIndex
-                                ? Icons.star
-                                : Icons.star_border,
-                            color: Colors.amber,
-                            size: 16,
+                : ListView.builder(
+                    itemCount: filteredEpisodes.length,
+                    itemBuilder: (context, index) {
+                      final ep = filteredEpisodes[index];
+                      return ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: CachedNetworkImage(
+                            imageUrl: ep.image,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              width: 50,
+                              height: 50,
+                              color: Colors.grey[300],
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                            errorWidget: (context, url, error) => Icon(Icons.broken_image),
+                          ),
+                        ),
+                        title: Text('${ep.numberEuropa} / ${ep.title}'),
+                        subtitle: Row(
+                          children: [
+                            Row(
+                              children: List.generate(5, (index) {
+                                int starIndex = index + 1;
+                                return Icon(
+                                  ep.rating >= starIndex
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 16,
+                                );
+                              }),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(
+                              ep.listened
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              color: ep.listened ? Colors.green : Colors.grey,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EpisodeDetailPage(
+                                  episode: ep, onUpdate: _loadStates),
+                            ),
                           );
-                        }),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(
-                        ep.listened
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: ep.listened ? Colors.green : Colors.grey,
-                        size: 16,
-                      ),
-                    ],
+                        },
+                      );
+                    },
                   ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EpisodeDetailPage(
-                            episode: ep, onUpdate: _loadStates),
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
-            ),
           ),
         ],
       ),
