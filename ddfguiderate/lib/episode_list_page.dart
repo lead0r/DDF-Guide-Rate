@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'episode.dart';
 import 'episode_data_service.dart';
 import 'episode_detail_page.dart';
+import 'backup_service.dart';
+import 'statistics_page.dart';
+import 'settings_page.dart';
+import 'main.dart';
 
 class EpisodeListPage extends StatefulWidget {
   @override
@@ -16,6 +20,13 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   List<Episode> _dr3iEpisodes = [];
   bool _loading = true;
   String _search = '';
+  bool _showFuture = false;
+  String _sortBy = 'date'; // 'date' oder 'number'
+  // Filter-Status
+  String? _selectedAuthor;
+  String? _selectedYear;
+  int? _selectedRating;
+  bool? _selectedListened;
 
   @override
   void initState() {
@@ -43,13 +54,139 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     });
   }
 
-  List<Episode> _filter(List<Episode> episodes) {
-    if (_search.isEmpty) return episodes;
-    return episodes.where((ep) =>
-      ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
-      ep.nummer.toString().contains(_search) ||
-      (ep.autor.toLowerCase().contains(_search.toLowerCase()))
+  void _showFilterDialog() async {
+    final authors = <String>{};
+    final years = <String>{};
+    for (var ep in _mainEpisodes) {
+      authors.add(ep.autor);
+      if (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.length >= 4) {
+        years.add(ep.veroeffentlichungsdatum!.substring(0, 4));
+      }
+    }
+    final sortedAuthors = authors.toList()..sort();
+    final sortedYears = years.toList()..sort((a, b) => b.compareTo(a));
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('Filter auswählen'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: _selectedAuthor,
+                  items: [DropdownMenuItem(value: null, child: Text('Alle Autoren'))] +
+                      sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
+                  onChanged: (v) => setState(() => _selectedAuthor = v),
+                  decoration: InputDecoration(labelText: 'Autor'),
+                ),
+                SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedYear,
+                  items: [DropdownMenuItem(value: null, child: Text('Alle Jahre'))] +
+                      sortedYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                  onChanged: (v) => setState(() => _selectedYear = v),
+                  decoration: InputDecoration(labelText: 'Jahr'),
+                ),
+                SizedBox(height: 8),
+                DropdownButtonFormField<int>(
+                  value: _selectedRating,
+                  items: [DropdownMenuItem(value: null, child: Text('Alle Bewertungen'))] +
+                      List.generate(5, (i) => DropdownMenuItem(value: 5 - i, child: Text('${5 - i} Sterne'))),
+                  onChanged: (v) => setState(() => _selectedRating = v),
+                  decoration: InputDecoration(labelText: 'Bewertung'),
+                ),
+                SizedBox(height: 8),
+                DropdownButtonFormField<bool>(
+                  value: _selectedListened,
+                  items: [
+                    DropdownMenuItem(value: null, child: Text('Alle')), 
+                    DropdownMenuItem(value: true, child: Text('Gehört')), 
+                    DropdownMenuItem(value: false, child: Text('Nicht gehört')),
+                  ],
+                  onChanged: (v) => setState(() => _selectedListened = v),
+                  decoration: InputDecoration(labelText: 'Gehört-Status'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _selectedAuthor = null;
+                  _selectedYear = null;
+                  _selectedRating = null;
+                  _selectedListened = null;
+                });
+              },
+              child: Text('Zurücksetzen'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {});
+              },
+              child: Text('Schließen'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Episode> _filterAndSort(List<Episode> episodes) {
+    List<Episode> filtered = episodes.where((ep) =>
+      (_search.isEmpty ||
+        ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
+        ep.nummer.toString().contains(_search) ||
+        (ep.autor.toLowerCase().contains(_search.toLowerCase()))) &&
+      (_selectedAuthor == null || ep.autor == _selectedAuthor) &&
+      (_selectedYear == null || (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.startsWith(_selectedYear!))) &&
+      (_selectedRating == null || ep.rating == _selectedRating) &&
+      (_selectedListened == null || ep.listened == _selectedListened)
     ).toList();
+    if (_sortBy == 'date') {
+      filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
+    } else {
+      filtered.sort((a, b) => b.nummer.compareTo(a.nummer));
+    }
+    return filtered;
+  }
+
+  List<Episode> _futureEpisodes(List<Episode> episodes) =>
+      episodes.where((ep) => ep.isFutureRelease).toList();
+  List<Episode> _pastEpisodes(List<Episode> episodes) =>
+      episodes.where((ep) => !ep.isFutureRelease).toList();
+
+  void _showSortDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Sortieren nach'),
+        children: [
+          RadioListTile<String>(
+            value: 'date',
+            groupValue: _sortBy,
+            title: Text('Neueste zuerst'),
+            onChanged: (v) {
+              setState(() => _sortBy = v!);
+              Navigator.pop(context);
+            },
+          ),
+          RadioListTile<String>(
+            value: 'number',
+            groupValue: _sortBy,
+            title: Text('Folgen-Nummer absteigend'),
+            onChanged: (v) {
+              setState(() => _sortBy = v!);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -61,9 +198,42 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final appState = MyApp.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('???'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.backup),
+            tooltip: 'Backup',
+            onPressed: () => BackupService.showBackupDialog(context),
+          ),
+          IconButton(
+            icon: Icon(Icons.sort),
+            tooltip: 'Sortieren',
+            onPressed: _showSortDialog,
+          ),
+          IconButton(
+            icon: Icon(Icons.bar_chart),
+            tooltip: 'Statistiken',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StatisticsPage(episodes: _mainEpisodes))),
+          ),
+          IconButton(
+            icon: Icon(Icons.filter_alt),
+            tooltip: 'Filter',
+            onPressed: _showFilterDialog,
+          ),
+          IconButton(
+            icon: Icon(Icons.settings),
+            tooltip: 'Einstellungen',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage())),
+          ),
+          IconButton(
+            icon: Icon(appState?._themeMode == ThemeMode.dark ? Icons.wb_sunny : Icons.nightlight_round),
+            tooltip: 'Dark/Light Mode',
+            onPressed: () => appState?.toggleTheme(),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -76,15 +246,18 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Suche Episoden...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: SizedBox(
+              height: 40,
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Suche Episoden...',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                ),
               ),
             ),
           ),
@@ -94,9 +267,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                 : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildList(_filter(_mainEpisodes)),
-                      _buildList(_filter(_kidsEpisodes)),
-                      _buildList(_filter(_dr3iEpisodes)),
+                      _buildList(_mainEpisodes),
+                      _buildList(_kidsEpisodes),
+                      _buildList(_dr3iEpisodes),
                     ],
                   ),
           ),
@@ -106,41 +279,47 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   }
 
   Widget _buildList(List<Episode> episodes) {
-    if (episodes.isEmpty) {
-      return Center(child: Text('Keine Episoden gefunden.'));
-    }
-    return ListView.separated(
-      itemCount: episodes.length,
-      separatorBuilder: (_, __) => Divider(height: 1),
-      itemBuilder: (context, index) {
-        final ep = episodes[index];
-        return ListTile(
-          leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.network(ep.coverUrl!, width: 48, height: 48, fit: BoxFit.cover),
-                )
-              : Icon(Icons.album, size: 48),
-          title: Text('${ep.nummer} / ${ep.titel}'),
-          subtitle: Text(ep.autor),
-          trailing: ep.isFutureRelease
-              ? Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text('NEU', style: TextStyle(color: Colors.white)),
-                )
-              : null,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => EpisodeDetailPage(episode: ep),
+    final future = _filterAndSort(_futureEpisodes(episodes));
+    final past = _filterAndSort(_pastEpisodes(episodes));
+    return ListView(
+      children: [
+        ExpansionTile(
+          title: Text('Zukünftige Episoden (${future.length})'),
+          initiallyExpanded: _showFuture,
+          onExpansionChanged: (v) => setState(() => _showFuture = v),
+          children: future.map((ep) => _buildTile(ep)).toList(),
+        ),
+        ...past.map((ep) => _buildTile(ep)),
+      ],
+    );
+  }
+
+  Widget _buildTile(Episode ep) {
+    return ListTile(
+      leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(ep.coverUrl!, width: 48, height: 48, fit: BoxFit.cover),
+            )
+          : Icon(Icons.album, size: 48),
+      title: Text('${ep.nummer} / ${ep.titel}'),
+      subtitle: Text(ep.autor),
+      trailing: ep.isFutureRelease
+          ? Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(8),
               ),
-            );
-          },
+              child: Text('NEU', style: TextStyle(color: Colors.white)),
+            )
+          : null,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EpisodeDetailPage(episode: ep),
+          ),
         );
       },
     );
