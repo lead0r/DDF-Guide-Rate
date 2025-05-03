@@ -23,10 +23,10 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   bool _showFuture = false;
   String _sortBy = 'date'; // 'date' oder 'number'
   // Filter-Status
-  String? _selectedAuthor;
-  String? _selectedYear;
-  int? _selectedRating;
-  bool? _selectedListened;
+  String _selectedAuthor = '';
+  String _selectedYear = '';
+  int _selectedRating = -1;
+  String _selectedListened = '';
 
   @override
   void initState() {
@@ -76,36 +76,36 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               children: [
                 DropdownButtonFormField<String>(
                   value: _selectedAuthor,
-                  items: [DropdownMenuItem(value: null, child: Text('Alle Autoren'))] +
+                  items: [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
                       sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
-                  onChanged: (v) => setState(() => _selectedAuthor = v),
+                  onChanged: (v) => setState(() => _selectedAuthor = v ?? ''),
                   decoration: InputDecoration(labelText: 'Autor'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _selectedYear,
-                  items: [DropdownMenuItem(value: null, child: Text('Alle Jahre'))] +
+                  items: [DropdownMenuItem(value: '', child: Text('Alle Jahre'))] +
                       sortedYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                  onChanged: (v) => setState(() => _selectedYear = v),
+                  onChanged: (v) => setState(() => _selectedYear = v ?? ''),
                   decoration: InputDecoration(labelText: 'Jahr'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<int>(
                   value: _selectedRating,
-                  items: [DropdownMenuItem(value: null, child: Text('Alle Bewertungen'))] +
+                  items: [DropdownMenuItem(value: -1, child: Text('Alle Bewertungen'))] +
                       List.generate(5, (i) => DropdownMenuItem(value: 5 - i, child: Text('${5 - i} Sterne'))),
-                  onChanged: (v) => setState(() => _selectedRating = v),
+                  onChanged: (v) => setState(() => _selectedRating = v ?? -1),
                   decoration: InputDecoration(labelText: 'Bewertung'),
                 ),
                 SizedBox(height: 8),
-                DropdownButtonFormField<bool>(
+                DropdownButtonFormField<String>(
                   value: _selectedListened,
                   items: [
-                    DropdownMenuItem(value: null, child: Text('Alle')), 
-                    DropdownMenuItem(value: true, child: Text('Gehört')), 
-                    DropdownMenuItem(value: false, child: Text('Nicht gehört')),
+                    DropdownMenuItem(value: '', child: Text('Alle')),
+                    DropdownMenuItem(value: 'true', child: Text('Gehört')),
+                    DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
                   ],
-                  onChanged: (v) => setState(() => _selectedListened = v),
+                  onChanged: (v) => setState(() => _selectedListened = v ?? ''),
                   decoration: InputDecoration(labelText: 'Gehört-Status'),
                 ),
               ],
@@ -115,10 +115,10 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             TextButton(
               onPressed: () {
                 setState(() {
-                  _selectedAuthor = null;
-                  _selectedYear = null;
-                  _selectedRating = null;
-                  _selectedListened = null;
+                  _selectedAuthor = '';
+                  _selectedYear = '';
+                  _selectedRating = -1;
+                  _selectedListened = '';
                 });
               },
               child: Text('Zurücksetzen'),
@@ -142,10 +142,10 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
         ep.nummer.toString().contains(_search) ||
         (ep.autor.toLowerCase().contains(_search.toLowerCase()))) &&
-      (_selectedAuthor == null || ep.autor == _selectedAuthor) &&
-      (_selectedYear == null || (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.startsWith(_selectedYear!))) &&
-      (_selectedRating == null || ep.rating == _selectedRating) &&
-      (_selectedListened == null || ep.listened == _selectedListened)
+      (_selectedAuthor == '' || ep.autor == _selectedAuthor) &&
+      (_selectedYear == '' || (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.startsWith(_selectedYear))) &&
+      (_selectedRating == -1 || ep.rating == _selectedRating) &&
+      (_selectedListened == '' || (_selectedListened == 'true' ? ep.listened : !ep.listened))
     ).toList();
     if (_sortBy == 'date') {
       filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
@@ -229,7 +229,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage())),
           ),
           IconButton(
-            icon: Icon(appState?._themeMode == ThemeMode.dark ? Icons.wb_sunny : Icons.nightlight_round),
+            icon: Icon(appState?.themeMode == ThemeMode.dark ? Icons.wb_sunny : Icons.nightlight_round),
             tooltip: 'Dark/Light Mode',
             onPressed: () => appState?.toggleTheme(),
           ),
