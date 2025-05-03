@@ -16,6 +16,7 @@ class Episode {
   bool listened;
   String? note;
   final String? spotifyUrl;
+  final Map<String, String> links;
 
   Episode({
     required this.id,
@@ -33,7 +34,13 @@ class Episode {
     this.listened = false,
     this.note,
     this.spotifyUrl,
-  });
+    Map<String, String>? links,
+  }) : links = links ?? const {};
+
+  static Map<String, String> _parseLinks(Map<String, dynamic>? jsonLinks) {
+    if (jsonLinks == null) return {};
+    return jsonLinks.map((key, value) => MapEntry(key.toString(), value.toString()));
+  }
 
   factory Episode.fromSerieJson(Map<String, dynamic> json) {
     return Episode(
@@ -49,6 +56,7 @@ class Episode {
       serieTyp: 'Serie',
       sprechrollen: json['sprechrollen'],
       spotifyUrl: json['spotify'],
+      links: _parseLinks(json['links']),
     );
   }
 
@@ -66,6 +74,7 @@ class Episode {
       serieTyp: 'Spezial',
       sprechrollen: json['sprechrollen'],
       spotifyUrl: json['spotify'],
+      links: _parseLinks(json['links']),
     );
   }
 
@@ -83,6 +92,7 @@ class Episode {
       serieTyp: 'Kurzgeschichte',
       sprechrollen: json['sprechrollen'],
       spotifyUrl: json['spotify'],
+      links: _parseLinks(json['links']),
     );
   }
 
@@ -100,6 +110,7 @@ class Episode {
       serieTyp: 'Kids',
       sprechrollen: json['sprechrollen'],
       spotifyUrl: json['spotify'],
+      links: _parseLinks(json['links']),
     );
   }
 
@@ -117,6 +128,7 @@ class Episode {
       serieTyp: 'DR3i',
       sprechrollen: json['sprechrollen'],
       spotifyUrl: json['spotify'],
+      links: _parseLinks(json['links']),
     );
   }
 

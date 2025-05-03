@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'database_service.dart';
 import 'package:intl/intl.dart';
 import 'spotify_id_resolver.dart';
+import 'settings_page.dart';
 
 class EpisodeDetailPage extends StatefulWidget {
   final Episode episode;
@@ -220,6 +221,45 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     );
   }
 
+  Future<StreamingProvider> _getProvider() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('streaming_provider');
+    return StreamingProvider.values.firstWhere(
+      (e) => e.toString() == name,
+      orElse: () => StreamingProvider.spotify,
+    );
+  }
+
+  String? _getStreamingUrl(Episode episode, StreamingProvider provider) {
+    switch (provider) {
+      case StreamingProvider.spotify:
+        return episode.links['spotify'];
+      case StreamingProvider.appleMusic:
+        return episode.links['appleMusic'];
+      case StreamingProvider.bookbeat:
+        return episode.links['bookbeat'];
+      case StreamingProvider.amazonMusic:
+        return episode.links['amazonMusic'];
+      case StreamingProvider.amazon:
+        return episode.links['amazon'];
+      case StreamingProvider.youtubeMusic:
+        return episode.links['youTubeMusic'];
+    }
+  }
+
+  Map<String, String> episodeToLinks(Episode episode) {
+    // Die Links liegen im JSON als Map unter 'links', aber im Modell nicht direkt
+    // Wir holen sie aus episode.coverUrl, episode.spotifyUrl etc. und aus episode (falls du das Modell anpassen willst)
+    // Hier nehmen wir an, dass episode.spotifyUrl == links['spotify'] usw.
+    // Besser: Das Modell um ein Map<String, String> links erweitern, aber für jetzt:
+    final Map<String, String> links = {};
+    if (episode.spotifyUrl != null) links['spotify'] = episode.spotifyUrl!;
+    // ... weitere Felder, falls im Modell vorhanden ...
+    // In der Praxis sollte das Modell erweitert werden, um alle Links zu halten.
+    // Für jetzt: Fallback auf null, falls nicht vorhanden.
+    return links;
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
@@ -355,39 +395,40 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               ),
             ),
             SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Streaming',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        if (episode.spotifyUrl != null && episode.spotifyUrl!.isNotEmpty) {
-                          final url = episode.spotifyUrl!;
+            FutureBuilder<StreamingProvider>(
+              future: _getProvider(),
+              builder: (context, snapshot) {
+                final provider = snapshot.data ?? StreamingProvider.spotify;
+                final providerName = providerNames[provider] ?? 'Spotify';
+                final providerIcon = providerIcons[provider] ?? Icons.music_note;
+                final url = _getStreamingUrl(episode, provider);
+                return ElevatedButton.icon(
+                  onPressed: url != null && url.isNotEmpty
+                      ? () async {
                           if (await canLaunchUrl(Uri.parse(url))) {
                             await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                            return;
                           }
                         }
-                        // Fallback: Suche
-                        final searchUrl = 'https://open.spotify.com/search/${Uri.encodeComponent(episode.titel)}';
-                        if (await canLaunchUrl(Uri.parse(searchUrl))) {
-                          await launchUrl(Uri.parse(searchUrl), mode: LaunchMode.externalApplication);
-                        }
-                      },
-                      icon: Icon(Icons.play_circle_outline),
-                      label: Text('Auf Spotify anhören'),
-                    ),
-                  ],
+                      : null,
+                  icon: Icon(providerIcon),
+                  label: Text('Auf $providerName anhören'),
+                );
+              },
+            ),
+            if (episode.serieTyp != 'DR3i' && episode.links['dreifragezeichen'] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.language),
+                  label: Text('Offizielle Webseite'),
+                  onPressed: () async {
+                    final url = episode.links['dreifragezeichen']!;
+                    if (await canLaunchUrl(Uri.parse(url))) {
+                      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                    }
+                  },
                 ),
               ),
-            ),
             if (_noteController != null) ...[
               SizedBox(height: 16),
               Card(

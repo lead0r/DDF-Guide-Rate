@@ -13,6 +13,7 @@ import 'statistics_page.dart';
 import 'backup_service.dart';
 import 'notification_service.dart';
 import 'main.dart';
+import 'settings_page.dart';
 
 // Enum für Sortieroptionen muss auf Top-Level sein
 enum SortOption {
@@ -480,6 +481,16 @@ class _EpisodeListPageState extends State<EpisodeListPage>
             icon: Icon(Icons.filter_list),
             onPressed: _openFilterDialog,
             tooltip: 'Filter',
+          ),
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsPage()),
+              );
+            },
+            tooltip: 'Einstellungen',
           ),
           IconButton(
             icon: Icon(
