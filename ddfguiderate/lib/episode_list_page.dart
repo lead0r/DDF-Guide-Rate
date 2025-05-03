@@ -65,6 +65,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     }
     final sortedAuthors = authors.toList()..sort();
     final sortedYears = years.toList()..sort((a, b) => b.compareTo(a));
+    final authorValue = sortedAuthors.contains(_selectedAuthor) ? _selectedAuthor : '';
+    final yearValue = sortedYears.contains(_selectedYear) ? _selectedYear : '';
+    final ratingList = List.generate(5, (i) => 5 - i);
+    final ratingValue = ratingList.contains(_selectedRating) ? _selectedRating : -1;
+    final listenedValues = ['', 'true', 'false'];
+    final listenedValue = listenedValues.contains(_selectedListened) ? _selectedListened : '';
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -75,7 +81,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: _selectedAuthor,
+                  value: authorValue,
                   items: [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
                       sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
                   onChanged: (v) => setState(() => _selectedAuthor = v ?? ''),
@@ -83,7 +89,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedYear,
+                  value: yearValue,
                   items: [DropdownMenuItem(value: '', child: Text('Alle Jahre'))] +
                       sortedYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
                   onChanged: (v) => setState(() => _selectedYear = v ?? ''),
@@ -91,15 +97,15 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  value: _selectedRating,
+                  value: ratingValue,
                   items: [DropdownMenuItem(value: -1, child: Text('Alle Bewertungen'))] +
-                      List.generate(5, (i) => DropdownMenuItem(value: 5 - i, child: Text('${5 - i} Sterne'))),
+                      ratingList.map((r) => DropdownMenuItem(value: r, child: Text('$r Sterne'))).toList(),
                   onChanged: (v) => setState(() => _selectedRating = v ?? -1),
                   decoration: InputDecoration(labelText: 'Bewertung'),
                 ),
                 SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedListened,
+                  value: listenedValue,
                   items: [
                     DropdownMenuItem(value: '', child: Text('Alle')),
                     DropdownMenuItem(value: 'true', child: Text('Gehört')),
