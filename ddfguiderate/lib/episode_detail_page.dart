@@ -98,18 +98,78 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ],
               ),
             SizedBox(height: 16),
+            if (ep.sprechrollen != null && ep.sprechrollen!.isNotEmpty) ...[
+              Text('Sprecher:', style: Theme.of(context).textTheme.titleMedium),
+              ...ep.sprechrollen!.map<Widget>((s) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                child: Text('${s['rolle'] ?? ''}: ${s['sprecher'] ?? ''}'),
+              )),
+              SizedBox(height: 16),
+            ],
             Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
             SizedBox(height: 24),
-            Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
-            TextField(
-              controller: _noteController,
-              minLines: 2,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Deine Notiz zur Folge...',
-                border: OutlineInputBorder(),
+            if ((ep.links['dreifragezeichen'] != null) && (ep.serieTyp == 'Serie' || ep.serieTyp == 'Kids'))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.link),
+                  label: Text('Offizielle Episodenseite'),
+                  onPressed: () async {
+                    final url = ep.links['dreifragezeichen'];
+                    if (url != null && await canLaunch(url)) {
+                      await launch(url);
+                    }
+                  },
+                ),
               ),
-              onChanged: (_) => _saveState(),
+            Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _noteController,
+                    minLines: 2,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      hintText: 'Deine Notiz zur Folge...',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (_) => _saveState(),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  tooltip: 'Notiz löschen',
+                  onPressed: () {
+                    setState(() {
+                      _noteController.clear();
+                    });
+                    _saveState();
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: DatabaseService().getHistory(ep.id),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.isEmpty) return SizedBox();
+                final history = snapshot.data!;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Änderungsverlauf:', style: Theme.of(context).textTheme.bodySmall),
+                    ...history.take(5).map((h) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Text(
+                        '${DateTime.fromMillisecondsSinceEpoch(h['timestamp'] ?? 0).toLocal().toString().substring(0, 16)}: '
+                        'Notiz: ${h['note'] ?? ''} | Bewertung: ${h['rating'] ?? ''} | Gehört: ${(h['listened'] ?? 0) == 1 ? 'Ja' : 'Nein'}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    )),
+                  ],
+                );
+              },
             ),
             SizedBox(height: 16),
             Text('Bewertung', style: Theme.of(context).textTheme.titleMedium),

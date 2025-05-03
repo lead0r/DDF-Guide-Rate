@@ -55,7 +55,16 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   }
 
   void _showFilterDialog() async {
-    if (_mainEpisodes.isEmpty) {
+    // Filterdaten aus der aktuell gewählten Serie
+    List<Episode> currentEpisodes;
+    if (_tabController.index == 0) {
+      currentEpisodes = _mainEpisodes;
+    } else if (_tabController.index == 1) {
+      currentEpisodes = _kidsEpisodes;
+    } else {
+      currentEpisodes = _dr3iEpisodes;
+    }
+    if (currentEpisodes.isEmpty) {
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -76,7 +85,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     }
     final authors = <String>{};
     final years = <String>{};
-    for (var ep in _mainEpisodes) {
+    for (var ep in currentEpisodes) {
       if (ep.autor.isNotEmpty) {
         ep.autor.split(',').map((a) => a.trim()).forEach(authors.add);
       }
@@ -84,7 +93,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         years.add(ep.veroeffentlichungsdatum!.substring(0, 4));
       }
     }
-
     final sortedAuthors = authors.where((a) => a.isNotEmpty).toList()..sort();
     final sortedYears = years.where((y) => y.isNotEmpty).toList()..sort((a, b) => b.compareTo(a));
     final ratingList = List.generate(5, (i) => 5 - i);
@@ -310,7 +318,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: 'Hauptserie'),
+            Tab(text: '???'),
             Tab(text: 'Kids'),
             Tab(text: 'DR3i'),
           ],
