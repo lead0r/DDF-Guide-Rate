@@ -82,8 +82,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         years.add(ep.veroeffentlichungsdatum!.substring(0, 4));
       }
     }
-    final sortedAuthors = authors.toList()..sort();
-    final sortedYears = years.toList()..sort((a, b) => b.compareTo(a));
+
+    final sortedAuthors = authors.where((a) => a.isNotEmpty).toList()..sort();
+    final sortedYears = years.where((y) => y.isNotEmpty).toList()..sort((a, b) => b.compareTo(a));
     final ratingList = List.generate(5, (i) => 5 - i);
     final listenedValues = ['', 'true', 'false'];
 
