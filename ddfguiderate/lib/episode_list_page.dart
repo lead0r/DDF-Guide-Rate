@@ -85,28 +85,20 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       ? [DropdownMenuItem(value: '', child: Text('Keine Autoren'))]
       : [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
         sortedAuthors.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList();
-    if (sortedAuthors.isEmpty) authorValue = '';
 
     final yearItems = sortedYears.isEmpty
       ? [DropdownMenuItem(value: '', child: Text('Keine Jahre'))]
       : [DropdownMenuItem(value: '', child: Text('Alle Jahre'))] +
         sortedYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList();
-    if (sortedYears.isEmpty) yearValue = '';
 
-    final ratingItems = ratingList.isEmpty
-      ? [DropdownMenuItem(value: -1, child: Text('Keine Bewertungen'))]
-      : [DropdownMenuItem(value: -1, child: Text('Alle Bewertungen'))] +
-        ratingList.map((r) => DropdownMenuItem(value: r, child: Text('$r Sterne'))).toList();
-    if (ratingList.isEmpty) ratingValue = -1;
+    final ratingItems = [DropdownMenuItem(value: -1, child: Text('Alle Bewertungen'))] +
+      ratingList.map((r) => DropdownMenuItem(value: r, child: Text('$r Sterne'))).toList();
 
-    final listenedItems = listenedValues.isEmpty
-      ? [DropdownMenuItem(value: '', child: Text('Keine Auswahl'))]
-      : [
-          DropdownMenuItem(value: '', child: Text('Alle')),
-          DropdownMenuItem(value: 'true', child: Text('Gehört')),
-          DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
-        ];
-    if (listenedValues.isEmpty) listenedValue = '';
+    final listenedItems = [
+      DropdownMenuItem(value: '', child: Text('Alle')),
+      DropdownMenuItem(value: 'true', child: Text('Gehört')),
+      DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
+    ];
 
     await showDialog(
       context: context,
