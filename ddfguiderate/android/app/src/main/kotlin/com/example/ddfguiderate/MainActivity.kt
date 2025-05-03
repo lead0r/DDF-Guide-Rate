@@ -1,4 +1,4 @@
-package com.example.ddfguiderate
+package com.nevial.ddfguiderate
 
 import io.flutter.embedding.android.FlutterActivity
 
