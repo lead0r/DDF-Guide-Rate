@@ -103,6 +103,7 @@ class DatabaseService {
   }
 
   Future<void> updateEpisodeState(String episodeId, {String? note, int? rating, bool? listened}) async {
+    print('[DEBUG] updateEpisodeState: $episodeId, note=$note, rating=$rating, listened=$listened');
     final dbClient = await db;
     final updateMap = <String, Object?>{};
     if (note != null) updateMap['note'] = note;
@@ -145,7 +146,9 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> getAllStates() async {
     final dbClient = await db;
-    return await dbClient.query('episode_state');
+    final result = await dbClient.query('episode_state');
+    print('[DEBUG] getAllStates: ${result.map((e) => '${e['episode_id']}: listened=${e['listened']}, rating=${e['rating']}, note=${e['note']}').toList()}');
+    return result;
   }
 
   Future<List<Map<String, dynamic>>> getHistory(String episodeId) async {

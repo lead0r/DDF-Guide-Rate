@@ -43,8 +43,10 @@ class Episode {
   }
 
   factory Episode.fromSerieJson(Map<String, dynamic> json) {
+    final id = 'serie_${json['nummer']}';
+    print('[DEBUG] Erzeuge Episode: $id');
     return Episode(
-      id: 'serie_${json['nummer']}',
+      id: id,
       nummer: json['nummer'] ?? 0,
       titel: json['titel'] ?? '',
       autor: json['autor'] ?? '',

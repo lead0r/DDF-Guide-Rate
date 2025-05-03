@@ -58,6 +58,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           orElse: () => {},
         );
         if (state.isNotEmpty) {
+          print('[DEBUG] applyState: ${ep.id} <- listened=${state['listened']}, rating=${state['rating']}, note=${state['note']}');
           ep.listened = (state['listened'] ?? 0) == 1;
           ep.rating = state['rating'] ?? 0;
           ep.note = state['note'] ?? '';
