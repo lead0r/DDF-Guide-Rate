@@ -121,9 +121,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
             SizedBox(height: 24),
             _buildRatingDistributionSection(),
             SizedBox(height: 24),
-            buildProgressTimeline(widget.episodes.where((e) => e.serieTyp == 'Serie').toList(), 'Serie'),
-            buildProgressTimeline(widget.episodes.where((e) => e.serieTyp == 'Kids').toList(), 'Kids'),
-            buildProgressTimeline(widget.episodes.where((e) => e.serieTyp == 'DR3i').toList(), 'DR3i'),
+            buildProgressTimeline(
+              widget.episodes.where((e) => (e.serieTyp?.toLowerCase().replaceAll(' ', '') ?? '') == 'serie').toList(),
+              '???'
+            ),
+            buildProgressTimeline(
+              widget.episodes.where((e) => (e.serieTyp?.toLowerCase().replaceAll(' ', '') ?? '') == 'kids').toList(),
+              'Kids'
+            ),
+            buildProgressTimeline(
+              widget.episodes.where((e) => (e.serieTyp?.toLowerCase().replaceAll(' ', '') ?? '') == 'dr3i').toList(),
+              'DR3i'
+            ),
             // Zusätzlicher Leerraum am Ende der Seite
             SizedBox(height: 80),
           ],
