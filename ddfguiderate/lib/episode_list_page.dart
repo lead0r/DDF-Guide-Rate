@@ -94,7 +94,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     applyState(kids);
     applyState(dr3i);
 
-    final prefs = await SharedPreferences.getInstance();
     await prefs.setString('mainEpisodes', jsonEncode(main.map((e) => e.toJson()).toList()));
     await prefs.setString('kidsEpisodes', jsonEncode(kids.map((e) => e.toJson()).toList()));
     await prefs.setString('dr3iEpisodes', jsonEncode(dr3i.map((e) => e.toJson()).toList()));
