@@ -239,17 +239,23 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               )),
             ),
             SizedBox(height: 16),
-            Row(
-              children: [
-                Checkbox(
-                  value: _listened,
-                  onChanged: (val) {
-                    setState(() => _listened = val ?? false);
-                    _saveState();
-                  },
-                ),
-                Text('Gehört'),
-              ],
+            InkWell(
+              borderRadius: BorderRadius.circular(4),
+              onTap: () {
+                setState(() => _listened = !_listened);
+                _saveState();
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _listened ? Icons.check_box : Icons.check_box_outline_blank,
+                    color: _listened ? Colors.green : null,
+                  ),
+                  SizedBox(width: 8),
+                  Text('Gehört'),
+                ],
+              ),
             ),
             SizedBox(height: 16),
             FutureBuilder<List<Map<String, dynamic>>>(

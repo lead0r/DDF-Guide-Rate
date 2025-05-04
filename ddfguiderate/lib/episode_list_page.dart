@@ -481,7 +481,29 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             )
           : Icon(Icons.album, size: 48),
       title: Text('${ep.nummer} / ${ep.titel}'),
-      subtitle: Text(ep.autor),
+      subtitle: Row(
+        children: [
+          // 4 Sterne, gelb ausgefüllt je nach Rating, sonst gelber Rand, sonst rot wenn 0
+          ...List.generate(4, (i) {
+            if (ep.rating == 0) {
+              // Noch nicht bewertet: rote Sterne
+              return Icon(Icons.star_border, color: Colors.red, size: 20);
+            } else {
+              // Bewertet: gelbe Sterne
+              return Icon(
+                i < ep.rating ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+                size: 20,
+              );
+            }
+          }),
+          SizedBox(width: 8),
+          // Gehört-Status: grüner Haken oder weißer Kreis
+          ep.listened
+              ? Icon(Icons.check_circle, color: Colors.green, size: 22)
+              : Icon(Icons.radio_button_unchecked, color: Colors.white, size: 22),
+        ],
+      ),
       trailing: ep.isFutureRelease
           ? Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -505,4 +527,3 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       },
     );
   }
-} 
