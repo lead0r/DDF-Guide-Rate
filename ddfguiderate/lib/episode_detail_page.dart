@@ -37,11 +37,14 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       rating: _rating,
       listened: _listened,
     );
-    await _reloadState();
+    widget.episode.rating = _rating;
+    widget.episode.listened = _listened;
+    widget.episode.note = _noteController.text;
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gespeichert!')),
     );
+    Navigator.pop(context, true);
   }
 
   Future<void> _reloadState() async {

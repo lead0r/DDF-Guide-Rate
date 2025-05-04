@@ -379,12 +379,15 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           IconButton(
             icon: Icon(Icons.bar_chart),
             tooltip: 'Statistiken',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StatisticsPage(episodes: _allEpisodes),
-              ),
-            ),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StatisticsPage(episodes: _allEpisodes),
+                ),
+              );
+              _loadEpisodes(); // Nach Rückkehr Episoden neu laden
+            },
           ),
           IconButton(
             icon: Icon(Icons.filter_alt),
