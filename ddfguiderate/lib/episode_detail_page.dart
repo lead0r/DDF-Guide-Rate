@@ -37,10 +37,22 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       rating: _rating,
       listened: _listened,
     );
+    await _reloadState();
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gespeichert!')),
     );
+  }
+
+  Future<void> _reloadState() async {
+    final state = await DatabaseService().getEpisodeState(widget.episode.id);
+    if (state != null) {
+      setState(() {
+        _rating = state['rating'] ?? 0;
+        _listened = (state['listened'] ?? 0) == 1;
+        _noteController.text = state['note'] ?? '';
+      });
+    }
   }
 
   void _share() {
