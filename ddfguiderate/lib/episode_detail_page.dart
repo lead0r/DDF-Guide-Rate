@@ -20,6 +20,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   int _rating = 0;
   bool _listened = false;
   bool _saving = false;
+  bool _editingNote = false;
 
   @override
   void initState() {
@@ -27,6 +28,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     _noteController = TextEditingController(text: widget.episode.note ?? '');
     _rating = widget.episode.rating;
     _listened = widget.episode.listened;
+    _editingNote = (widget.episode.note == null || widget.episode.note!.isEmpty);
   }
 
   Future<void> _saveState() async {
@@ -105,6 +107,43 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     } catch (_) {
       return '';
     }
+  }
+
+  Future<void> _saveNote() async {
+    setState(() => _saving = true);
+    await DatabaseService().updateEpisodeState(
+      widget.episode.id,
+      note: _noteController.text,
+      rating: _rating,
+      listened: _listened,
+    );
+    widget.episode.note = _noteController.text;
+    setState(() {
+      _saving = false;
+      _editingNote = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Notiz gespeichert!')),
+    );
+  }
+
+  Future<void> _deleteNote() async {
+    setState(() => _saving = true);
+    await DatabaseService().updateEpisodeState(
+      widget.episode.id,
+      note: '',
+      rating: _rating,
+      listened: _listened,
+    );
+    widget.episode.note = '';
+    _noteController.clear();
+    setState(() {
+      _saving = false;
+      _editingNote = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Notiz gelöscht!')),
+    );
   }
 
   @override
@@ -198,32 +237,70 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ),
               ),
             Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _noteController,
-                    minLines: 2,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      hintText: 'Deine Notiz zur Folge...',
-                      border: OutlineInputBorder(),
+            if (_editingNote) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _noteController,
+                      minLines: 2,
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        hintText: 'Deine Notiz zur Folge...',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                    onChanged: (_) => _saveState(),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.save, color: Colors.blue),
+                    tooltip: 'Notiz speichern',
+                    onPressed: () {
+                      if (_noteController.text.trim().isNotEmpty) {
+                        _saveNote();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ] else if ((ep.note ?? '').isNotEmpty) ...[
+              Card(
+                color: Theme.of(context).colorScheme.surface,
+                margin: EdgeInsets.symmetric(vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          ep.note ?? '',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            tooltip: 'Bearbeiten',
+                            onPressed: () {
+                              setState(() {
+                                _editingNote = true;
+                                _noteController.text = ep.note ?? '';
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            tooltip: 'Löschen',
+                            onPressed: _deleteNote,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.delete),
-                  tooltip: 'Notiz löschen',
-                  onPressed: () {
-                    setState(() {
-                      _noteController.clear();
-                    });
-                    _saveState();
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
             SizedBox(height: 8),
             Text('Bewertung', style: Theme.of(context).textTheme.titleMedium),
             Row(
