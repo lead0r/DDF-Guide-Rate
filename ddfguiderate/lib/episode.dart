@@ -143,4 +143,42 @@ class Episode {
       return false;
     }
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'nummer': nummer,
+    'titel': titel,
+    'autor': autor,
+    'beschreibung': beschreibung,
+    'gesamtbeschreibung': gesamtbeschreibung,
+    'hoerspielskriptautor': hoerspielskriptautor,
+    'veroeffentlichungsdatum': veroeffentlichungsdatum,
+    'coverUrl': coverUrl,
+    'serieTyp': serieTyp,
+    'sprechrollen': sprechrollen,
+    'rating': rating,
+    'listened': listened,
+    'note': note,
+    'spotifyUrl': spotifyUrl,
+    'links': links,
+  };
+
+  static Episode fromJson(Map<String, dynamic> json) => Episode(
+    id: json['id'],
+    nummer: json['nummer'],
+    titel: json['titel'],
+    autor: json['autor'],
+    beschreibung: json['beschreibung'],
+    gesamtbeschreibung: json['gesamtbeschreibung'],
+    hoerspielskriptautor: json['hoerspielskriptautor'],
+    veroeffentlichungsdatum: json['veroeffentlichungsdatum'],
+    coverUrl: json['coverUrl'],
+    serieTyp: json['serieTyp'],
+    sprechrollen: json['sprechrollen'],
+    rating: json['rating'] ?? 0,
+    listened: json['listened'] ?? false,
+    note: json['note'],
+    spotifyUrl: json['spotifyUrl'],
+    links: (json['links'] as Map?)?.cast<String, String>(),
+  );
 }

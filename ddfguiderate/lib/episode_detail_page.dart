@@ -21,6 +21,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   bool _listened = false;
   bool _saving = false;
   bool _editingNote = false;
+  bool _loading = true;
 
   @override
   void initState() {
@@ -386,6 +387,20 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               Center(child: CircularProgressIndicator()),
             ],
             SizedBox(height: 32),
+            _loading
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Episoden werden geladen...'),
+                    ],
+                  ),
+                )
+              : TabBarView(
+                  // ...
+                ),
           ],
         ),
       ),

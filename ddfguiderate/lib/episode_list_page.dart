@@ -8,6 +8,8 @@ import 'settings_page.dart';
 import 'main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'database_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class EpisodeListPage extends StatefulWidget {
   @override
@@ -43,14 +45,37 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   }
 
   Future<void> _loadEpisodes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedMain = prefs.getString('mainEpisodes');
+    final cachedKids = prefs.getString('kidsEpisodes');
+    final cachedDr3i = prefs.getString('dr3iEpisodes');
+
+    if (cachedMain != null && cachedKids != null && cachedDr3i != null) {
+      setState(() {
+        _mainEpisodes = (jsonDecode(cachedMain) as List)
+            .map((e) => Episode.fromJson(e)).toList();
+        _kidsEpisodes = (jsonDecode(cachedKids) as List)
+            .map((e) => Episode.fromJson(e)).toList();
+        _dr3iEpisodes = (jsonDecode(cachedDr3i) as List)
+            .map((e) => Episode.fromJson(e)).toList();
+        _loading = false;
+      });
+    }
+
     setState(() => _loading = true);
     final dataService = EpisodeDataService();
-    final main = await dataService.fetchAllMainEpisodes();
-    final kids = await dataService.fetchKidsEpisodes();
-    final dr3i = await dataService.fetchDr3iEpisodes();
+    final results = await Future.wait([
+      dataService.fetchAllMainEpisodes(),
+      dataService.fetchKidsEpisodes(),
+      dataService.fetchDr3iEpisodes(),
+      DatabaseService().getAllStates(),
+    ]);
+    final main = results[0] as List<Episode>;
+    final kids = results[1] as List<Episode>;
+    final dr3i = results[2] as List<Episode>;
+    final dbStates = results[3] as List<Map<String, dynamic>>;
 
     // Lade States aus DB und mapp sie auf die Episoden
-    final dbStates = await DatabaseService().getAllStates();
     void applyState(List<Episode> episodes) {
       for (var ep in episodes) {
         final state = dbStates.firstWhere(
@@ -68,6 +93,11 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     applyState(main);
     applyState(kids);
     applyState(dr3i);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('mainEpisodes', jsonEncode(main.map((e) => e.toJson()).toList()));
+    await prefs.setString('kidsEpisodes', jsonEncode(kids.map((e) => e.toJson()).toList()));
+    await prefs.setString('dr3iEpisodes', jsonEncode(dr3i.map((e) => e.toJson()).toList()));
 
     setState(() {
       _mainEpisodes = main;
@@ -207,24 +237,25 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           actions: [
             TextButton(
               onPressed: () {
+                Navigator.pop(context);
                 setState(() {
-                  authorValue = '';
-                  yearValue = '';
-                  ratingValue = -1;
-                  listenedValue = '';
+                  _selectedAuthor = '';
+                  _selectedYear = '';
+                  _selectedRating = -1;
+                  _selectedListened = '';
                 });
               },
               child: Text('Zurücksetzen'),
             ),
             TextButton(
               onPressed: () {
+                Navigator.pop(context);
                 setState(() {
                   _selectedAuthor = authorValue;
                   _selectedYear = yearValue;
                   _selectedRating = ratingValue;
                   _selectedListened = listenedValue;
                 });
-                Navigator.pop(context);
               },
               child: Text('Anwenden'),
             ),

@@ -112,28 +112,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           children: [
             _buildOverviewSection(),
             SizedBox(height: 24),
-            _buildProgressChartSection(),
-            SizedBox(height: 24),
-            _buildTop10Section(),
-            SizedBox(height: 24),
-            _buildAuthorBarChartSection(),
-            SizedBox(height: 24),
-            _buildYearBarChartSection(),
-            SizedBox(height: 24),
-            _buildRatingDistributionSection(),
-            SizedBox(height: 24),
-
-            // Debug-Ausgabe: Anzahl Episoden pro Serie
-            Builder(builder: (context) {
-              final all = widget.episodes;
-              print('Serie: ${all.where((e) => e.serieTyp == "Serie").length}');
-              print('Kids: ${all.where((e) => e.serieTyp == "Kids").length}');
-              print('DR3i: ${all.where((e) => e.serieTyp == "DR3i").length}');
-              print('Spezial: ${all.where((e) => e.serieTyp == "Spezial").length}');
-              print('Kurzgeschichte: ${all.where((e) => e.serieTyp == "Kurzgeschichte").length}');
-              return SizedBox.shrink();
-            }),
-
+            // Fortschritt pro Serie (rot/grüne Balken)
             buildProgressTimeline(
               widget.episodes.where((e) => e.serieTyp == 'Serie').toList(),
               '???'
@@ -154,7 +133,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
               widget.episodes.where((e) => e.serieTyp == 'Kurzgeschichte').toList(),
               'Kurzgeschichten'
             ),
-            // Zusätzlicher Leerraum am Ende der Seite
+            SizedBox(height: 24),
+            _buildRatingDistributionSection(),
+            SizedBox(height: 24),
+            _buildTop10Section(),
+            SizedBox(height: 24),
+            _buildProgressChartSection(),
+            SizedBox(height: 24),
+            _buildYearBarChartSection(), // Veröffentlichungen pro Jahr
+            SizedBox(height: 24),
+            _buildAuthorBarChartSection(),
             SizedBox(height: 80),
           ],
         ),
