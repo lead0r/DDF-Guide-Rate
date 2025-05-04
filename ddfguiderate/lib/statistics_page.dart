@@ -405,6 +405,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         },
                       ),
                     ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   gridData: FlGridData(show: true),
                   borderData: FlBorderData(show: true),

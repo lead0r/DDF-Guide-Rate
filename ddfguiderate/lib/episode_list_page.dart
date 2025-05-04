@@ -106,7 +106,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     });
   }
 
-  void _showFilterDialog() async {
+  Future<void> _showFilterDialog() async {
     // Filterdaten aus der aktuell gewählten Serie
     List<Episode> currentEpisodes;
     if (_tabController.index == 0) {
@@ -194,7 +194,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     print('ratingItems: \\${ratingItems.map((e) => e.value)}, ratingValue: $ratingValue');
     print('listenedItems: \\${listenedItems.map((e) => e.value)}, listenedValue: $listenedValue');
 
-    await showDialog(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -236,31 +236,29 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  _selectedAuthor = '';
-                  _selectedYear = '';
-                  _selectedRating = -1;
-                  _selectedListened = '';
+                Navigator.pop(context, {
+                  'author': '',
+                  'year': '',
+                  'rating': -1,
+                  'listened': '',
                 });
               },
               child: Text('Zurücksetzen'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  _selectedAuthor = authorValue;
-                  _selectedYear = yearValue;
-                  _selectedRating = ratingValue;
-                  _selectedListened = listenedValue;
+                Navigator.pop(context, {
+                  'author': authorValue,
+                  'year': yearValue,
+                  'rating': ratingValue,
+                  'listened': listenedValue,
                 });
               },
               child: Text('Anwenden'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(context, null);
               },
               child: Text('Schließen'),
             ),
@@ -268,6 +266,16 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         ),
       ),
     );
+
+    // Nach dem Dialog: Filter im Haupt-Widget setzen und Liste neu bauen
+    if (result != null) {
+      setState(() {
+        _selectedAuthor = result['author'];
+        _selectedYear = result['year'];
+        _selectedRating = result['rating'];
+        _selectedListened = result['listened'];
+      });
+    }
   }
 
   List<Episode> _filterAndSort(List<Episode> episodes) {
