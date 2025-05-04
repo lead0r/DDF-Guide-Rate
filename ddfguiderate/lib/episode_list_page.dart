@@ -484,7 +484,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       subtitle: Row(
         children: [
           // 4 Sterne, gelb ausgefüllt je nach Rating, sonst gelber Rand, sonst weiß wenn 0
-          ...List.generate(4, (i) {
+          ...List.generate(5, (i) {
             if (ep.rating == 0) {
               // Noch nicht bewertet: weiße Sterne
               return Icon(Icons.star_border, color: Colors.white, size: 20);
