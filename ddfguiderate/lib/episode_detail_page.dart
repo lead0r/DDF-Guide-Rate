@@ -263,46 +263,53 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ],
               ),
             ] else if ((ep.note ?? '').isNotEmpty) ...[
-              Container(
-                margin: EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.edit, color: Colors.blue),
-                            tooltip: 'Bearbeiten',
-                            onPressed: () {
-                              setState(() {
-                                _editingNote = true;
-                                _noteController.text = ep.note ?? '';
-                              });
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
-                            tooltip: 'Löschen',
-                            onPressed: _deleteNote,
-                          ),
-                        ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Container(
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 1.2,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      SizedBox(height: 4),
-                      Text(
+                      child: Text(
                         ep.note ?? '',
-                        style: TextStyle(fontSize: 16, color: Colors.black87),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.left,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit, color: Colors.blue),
+                        tooltip: 'Bearbeiten',
+                        onPressed: () {
+                          setState(() {
+                            _editingNote = true;
+                            _noteController.text = ep.note ?? '';
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Löschen',
+                        onPressed: _deleteNote,
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
             ],
             SizedBox(height: 8),
