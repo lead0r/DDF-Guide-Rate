@@ -44,7 +44,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gespeichert!')),
     );
-    Navigator.pop(context, true);
   }
 
   Future<void> _reloadState() async {
@@ -88,12 +87,38 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     }
   }
 
+  String _formatDate(String? isoDate) {
+    if (isoDate == null || isoDate.length < 10) return '';
+    try {
+      final date = DateTime.parse(isoDate);
+      return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+    } catch (_) {
+      return isoDate;
+    }
+  }
+
+  String _formatHistoryDate(dynamic timestamp) {
+    if (timestamp == null) return '';
+    try {
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ep = widget.episode;
     return Scaffold(
       appBar: AppBar(
         title: Text('${ep.nummer} / ${ep.titel}'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.share),
@@ -131,11 +156,23 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               Row(
                 children: [
                   Text('Veröffentlichung: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(ep.veroeffentlichungsdatum!),
+                  Text(_formatDate(ep.veroeffentlichungsdatum)),
                 ],
               ),
             SizedBox(height: 16),
             Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
+            SizedBox(height: 16),
+            FutureBuilder<String>(
+              future: _getProviderName(),
+              builder: (context, snapshot) {
+                final provider = snapshot.data ?? 'Spotify';
+                return ElevatedButton.icon(
+                  icon: Icon(Icons.play_arrow),
+                  label: Text('Auf $provider abspielen'),
+                  onPressed: _openStreaming,
+                );
+              },
+            ),
             SizedBox(height: 16),
             if (ep.sprechrollen != null && ep.sprechrollen!.isNotEmpty) ...[
               Text('Sprecher:', style: Theme.of(context).textTheme.titleMedium),
@@ -188,28 +225,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               ],
             ),
             SizedBox(height: 8),
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: DatabaseService().getHistory(ep.id),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.isEmpty) return SizedBox();
-                final history = snapshot.data!;
-                return ExpansionTile(
-                  title: Text('Änderungsverlauf', style: Theme.of(context).textTheme.bodySmall),
-                  initiallyExpanded: false,
-                  children: [
-                    ...history.take(5).map((h) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 16),
-                      child: Text(
-                        '${DateTime.fromMillisecondsSinceEpoch(h['timestamp'] ?? 0).toLocal().toString().substring(0, 16)}: '
-                        'Notiz: ${h['note'] ?? ''} | Bewertung: ${h['rating'] ?? ''} | Gehört: ${(h['listened'] ?? 0) == 1 ? 'Ja' : 'Nein'}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    )),
-                  ],
-                );
-              },
-            ),
-            SizedBox(height: 16),
             Text('Bewertung', style: Theme.of(context).textTheme.titleMedium),
             Row(
               children: List.generate(5, (i) => IconButton(
@@ -237,17 +252,28 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               ],
             ),
             SizedBox(height: 16),
-            FutureBuilder<String>(
-              future: _getProviderName(),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: DatabaseService().getHistory(ep.id),
               builder: (context, snapshot) {
-                final provider = snapshot.data ?? 'Spotify';
-                return ElevatedButton.icon(
-                  icon: Icon(Icons.play_arrow),
-                  label: Text('Auf $provider abspielen'),
-                  onPressed: _openStreaming,
+                if (!snapshot.hasData || snapshot.data!.isEmpty) return SizedBox();
+                final history = snapshot.data!;
+                return ExpansionTile(
+                  title: Text('Änderungsverlauf', style: Theme.of(context).textTheme.bodySmall),
+                  initiallyExpanded: false,
+                  children: [
+                    ...history.take(5).map((h) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 16),
+                      child: Text(
+                        '${_formatHistoryDate(h['timestamp'])}: '
+                        'Notiz: ${h['note'] ?? ''} | Bewertung: ${h['rating'] ?? ''} | Gehört: ${(h['listened'] ?? 0) == 1 ? 'Ja' : 'Nein'}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    )),
+                  ],
                 );
               },
             ),
+            SizedBox(height: 48),
             if (_saving) ...[
               SizedBox(height: 16),
               Center(child: CircularProgressIndicator()),
