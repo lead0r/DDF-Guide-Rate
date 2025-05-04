@@ -281,7 +281,9 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
                           border: Border.all(
-                            color: Colors.white,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
                             width: 1.2,
                           ),
                           borderRadius: BorderRadius.circular(8),
@@ -290,7 +292,9 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                           ep.note ?? '',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
                           ),
                           textAlign: TextAlign.left,
                         ),
