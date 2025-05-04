@@ -527,3 +527,4 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       },
     );
   }
+}  
