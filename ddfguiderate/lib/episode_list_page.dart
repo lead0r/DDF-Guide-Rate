@@ -483,13 +483,15 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       title: Text('${ep.nummer} / ${ep.titel}'),
       subtitle: Row(
         children: [
-          // 4 Sterne, gelb ausgefüllt je nach Rating, sonst gelber Rand, sonst weiß wenn 0
           ...List.generate(5, (i) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             if (ep.rating == 0) {
-              // Noch nicht bewertet: weiße Sterne
-              return Icon(Icons.star_border, color: Colors.white, size: 20);
+              return Icon(
+                Icons.star_border,
+                color: isDark ? Colors.white : Colors.grey[400],
+                size: 20,
+              );
             } else {
-              // Bewertet: gelbe Sterne
               return Icon(
                 i < ep.rating ? Icons.star : Icons.star_border,
                 color: Colors.amber,
@@ -498,10 +500,15 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             }
           }),
           SizedBox(width: 8),
-          // Gehört-Status: grüner Haken oder weißer Kreis
           ep.listened
               ? Icon(Icons.check_circle, color: Colors.green, size: 22)
-              : Icon(Icons.radio_button_unchecked, color: Colors.white, size: 22),
+              : Icon(
+                  Icons.radio_button_unchecked,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.grey[400],
+                  size: 22,
+                ),
         ],
       ),
       trailing: ep.isFutureRelease
