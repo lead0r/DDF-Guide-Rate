@@ -219,12 +219,11 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 padding: const EdgeInsets.symmetric(vertical: 2.0),
                 child: Text('${s['rolle'] ?? ''}: ${s['sprecher'] ?? ''}'),
               )),
-              SizedBox(height: 16),
+              SizedBox(height: 12),
             ],
-            SizedBox(height: 24),
             if ((ep.links['dreifragezeichen'] != null) && (ep.serieTyp == 'Serie' || ep.serieTyp == 'Kids'))
               Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
+                padding: const EdgeInsets.only(bottom: 12.0),
                 child: ElevatedButton.icon(
                   icon: Icon(Icons.link),
                   label: Text('Offizielle Episodenseite'),
@@ -236,6 +235,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                   },
                 ),
               ),
+            SizedBox(height: 12),
             Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
             if (_editingNote) ...[
               Row(
@@ -267,29 +267,38 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: Container(
-                      margin: EdgeInsets.symmetric(vertical: 8),
-                      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 1.2,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        setState(() {
+                          _editingNote = true;
+                          _noteController.text = ep.note ?? '';
+                        });
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(vertical: 8),
+                        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 1.2,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        ep.note ?? '',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
+                        child: Text(
+                          ep.note ?? '',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.left,
                         ),
-                        textAlign: TextAlign.left,
                       ),
                     ),
                   ),
                   SizedBox(width: 8),
-                  Column(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
