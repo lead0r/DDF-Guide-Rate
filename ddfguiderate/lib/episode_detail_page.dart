@@ -263,21 +263,20 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 ],
               ),
             ] else if ((ep.note ?? '').isNotEmpty) ...[
-              Card(
-                color: Theme.of(context).colorScheme.surface,
+              Container(
                 margin: EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade400, width: 1.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: Row(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          ep.note ?? '',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                      Column(
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           IconButton(
                             icon: Icon(Icons.edit, color: Colors.blue),
@@ -295,6 +294,11 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                             onPressed: _deleteNote,
                           ),
                         ],
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        ep.note ?? '',
+                        style: TextStyle(fontSize: 16, color: Colors.black87),
                       ),
                     ],
                   ),
