@@ -387,20 +387,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
               Center(child: CircularProgressIndicator()),
             ],
             SizedBox(height: 32),
-            _loading
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Episoden werden geladen...'),
-                    ],
-                  ),
-                )
-              : TabBarView(
-                  // ...
-                ),
           ],
         ),
       ),
