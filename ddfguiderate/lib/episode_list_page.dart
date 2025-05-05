@@ -25,6 +25,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   int _selectedRating = -1;
   String _selectedListened = '';
   String _selectedType = '';
+  bool _onlyRated = false;
 
   @override
   void initState() {
@@ -64,7 +65,8 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         _selectedType == '' ||
         (_selectedType == 'Spezial' && ep.serieTyp == 'Spezial') ||
         (_selectedType == 'Kurzgeschichte' && ep.serieTyp == 'Kurzgeschichte')
-      )
+      ) &&
+      (!_onlyRated || ep.rating > 0)
     ).toList();
     switch (_sortBy) {
       case 'date':
@@ -143,6 +145,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     int ratingValue = _selectedRating;
     String listenedValue = _selectedListened;
     String typeValue = _selectedType;
+    bool onlyRatedValue = _onlyRated;
 
     // Wert auf gültigen Wert mappen
     if (!sortedAuthors.contains(authorValue)) authorValue = '';
@@ -219,6 +222,14 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   onChanged: (v) => setState(() => typeValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Folgentyp'),
                 ),
+                SizedBox(height: 8),
+                CheckboxListTile(
+                  value: onlyRatedValue,
+                  onChanged: (v) => setState(() => onlyRatedValue = v ?? false),
+                  title: Text('Nur bewertete Episoden'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
               ],
             ),
           ),
@@ -231,6 +242,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   'rating': -1,
                   'listened': '',
                   'type': '',
+                  'onlyRated': false,
                 });
               },
               child: Text('Zurücksetzen'),
@@ -243,6 +255,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   'rating': ratingValue,
                   'listened': listenedValue,
                   'type': typeValue,
+                  'onlyRated': onlyRatedValue,
                 });
               },
               child: Text('Anwenden'),
@@ -266,6 +279,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         _selectedRating = result['rating'];
         _selectedListened = result['listened'];
         _selectedType = result['type'] ?? '';
+        _onlyRated = result['onlyRated'] ?? false;
       });
     }
   }

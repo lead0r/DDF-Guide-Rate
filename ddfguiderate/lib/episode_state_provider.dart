@@ -25,12 +25,17 @@ class EpisodeStateProvider extends ChangeNotifier {
     List<Episode> kids = [];
     List<Episode> dr3i = [];
 
+    // 1. Zeige sofort gecachte Episoden, falls vorhanden
     if (cachedMain != null && cachedKids != null && cachedDr3i != null) {
       main = (jsonDecode(cachedMain) as List).map((e) => Episode.fromJson(e)).toList();
       kids = (jsonDecode(cachedKids) as List).map((e) => Episode.fromJson(e)).toList();
       dr3i = (jsonDecode(cachedDr3i) as List).map((e) => Episode.fromJson(e)).toList();
+      _episodes = [...main, ...kids, ...dr3i];
+      _loading = false;
+      notifyListeners();
     }
 
+    // 2. Lade im Hintergrund die aktuellen Daten
     final dataService = EpisodeDataService();
     final results = await Future.wait([
       dataService.fetchAllMainEpisodes(),
@@ -54,6 +59,7 @@ class EpisodeStateProvider extends ChangeNotifier {
           ep.rating = state['rating'] ?? 0;
           ep.note = state['note'] ?? '';
         }
+        print('[DEBUG] applyState: ${ep.id} listened=${ep.listened}');
       }
     }
     applyState(main);

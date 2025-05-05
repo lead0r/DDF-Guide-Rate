@@ -42,8 +42,12 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       listened: _listened,
     );
     setState(() => _saving = false);
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Gespeichert!')),
+      SnackBar(
+        content: Text('Gespeichert!'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
@@ -59,8 +63,12 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       _saving = false;
       _editingNote = false;
     });
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Notiz gespeichert!')),
+      SnackBar(
+        content: Text('Notiz gespeichert!'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
@@ -77,8 +85,12 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       _saving = false;
       _editingNote = true;
     });
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Notiz gelöscht!')),
+      SnackBar(
+        content: Text('Notiz gelöscht!'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 
@@ -218,7 +230,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                   )),
                   SizedBox(height: 12),
                 ],
-                if ((ep.links['dreifragezeichen'] != null) && (ep.serieTyp == 'Serie' || ep.serieTyp == 'Kids'))
+                if (ep.links['dreifragezeichen'] != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: ElevatedButton.icon(

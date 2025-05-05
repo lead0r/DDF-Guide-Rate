@@ -6,6 +6,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'episode_state_provider.dart';
 import 'episode_detail_page.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -14,6 +19,7 @@ class StatisticsPage extends StatefulWidget {
 
 class _StatisticsPageState extends State<StatisticsPage> {
   late Map<String, dynamic> statistics;
+  final GlobalKey _sharePicKey = GlobalKey();
 
   @override
   void didChangeDependencies() {
@@ -86,6 +92,25 @@ class _StatisticsPageState extends State<StatisticsPage> {
     };
   }
 
+  Future<void> _shareStatisticsPic() async {
+    try {
+      RenderRepaintBoundary boundary = _sharePicKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      final tempDir = await getTemporaryDirectory();
+      final file = await File('${tempDir.path}/statistik_share.png').create();
+      await file.writeAsBytes(pngBytes);
+
+      await Share.shareXFiles([XFile(file.path)], text: 'Meine Drei ??? Hörstatistiken!');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Teilen des Bildes: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
@@ -106,6 +131,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
         title: Text('Statistiken'),
         actions: [
           IconButton(
+            icon: Icon(Icons.share),
+            tooltip: 'Statistik als Bild teilen',
+            onPressed: _shareStatisticsPic,
+          ),
+          IconButton(
             icon: Icon(
               Theme.of(context).brightness == Brightness.dark
                   ? Icons.wb_sunny
@@ -117,29 +147,32 @@ class _StatisticsPageState extends State<StatisticsPage> {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildOverviewSection(),
-            SizedBox(height: 24),
-            // Fortschritt pro Serie (rot/grüne Balken) in gewünschter Reihenfolge
-            _buildProgressTimeline(mainEpisodes, '???'),
-            _buildProgressTimeline(spezialEpisodes, 'Spezial'),
-            _buildProgressTimeline(kurzEpisodes, 'Kurzgeschichten'),
-            _buildProgressTimeline(kidsEpisodes, 'Kids'),
-            _buildProgressTimeline(dr3iEpisodes, 'DR3i'),
-            SizedBox(height: 24),
-            _buildRatingDistributionSection(),
-            SizedBox(height: 24),
-            _buildTop10Section(),
-            SizedBox(height: 24),
-            _buildProgressChartSection(),
-            SizedBox(height: 24),
-            _buildYearBarChartSection(), // Veröffentlichungen pro Jahr
-            SizedBox(height: 24),
-            _buildAuthorBarChartSection(),
-            SizedBox(height: 80),
-          ],
+        child: RepaintBoundary(
+          key: _sharePicKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildOverviewSection(),
+              SizedBox(height: 24),
+              // Fortschritt pro Serie (rot/grüne Balken) in gewünschter Reihenfolge
+              _buildProgressTimeline(mainEpisodes, '???'),
+              _buildProgressTimeline(spezialEpisodes, 'Spezial'),
+              _buildProgressTimeline(kurzEpisodes, 'Kurzgeschichten'),
+              _buildProgressTimeline(kidsEpisodes, 'Kids'),
+              _buildProgressTimeline(dr3iEpisodes, 'DR3i'),
+              SizedBox(height: 24),
+              _buildRatingDistributionSection(),
+              SizedBox(height: 24),
+              _buildTop10Section(),
+              SizedBox(height: 24),
+              _buildProgressChartSection(),
+              SizedBox(height: 24),
+              _buildYearBarChartSection(), // Veröffentlichungen pro Jahr
+              SizedBox(height: 24),
+              _buildAuthorBarChartSection(),
+              SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
     );
