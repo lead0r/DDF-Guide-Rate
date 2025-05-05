@@ -289,61 +289,71 @@ class _StatisticsPageState extends State<StatisticsPage> {
       children: [
         Text('Top-Autoren', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: SizedBox(
-              height: 220,
-              child: BarChart(
-                BarChartData(
-                  barGroups: [
-                    for (int i = 0; i < top.length; i++)
-                      BarChartGroupData(
-                        x: i,
-                        barRods: [
-                          BarChartRodData(
-                            toY: top[i].value.toDouble(),
-                            color: Colors.blue,
-                          ),
-                        ],
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.85,
+            height: 220,
+            child: BarChart(
+              BarChartData(
+                barGroups: [
+                  for (int i = 0; i < top.length; i++)
+                    BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: top[i].value.toDouble(),
+                          color: Colors.blue,
+                        ),
+                      ],
+                    ),
+                ],
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Text(
+                          value.toInt().toString(),
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
-                  ],
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final idx = value.toInt();
-                          if (idx < 0 || idx >= top.length) return Container();
-                          if (idx % 2 != 0) return Container();
-                          return Transform.rotate(
-                            angle: -0.7,
-                            child: Tooltip(
-                              message: top[idx].key,
-                              child: Text(
-                                top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
-                                style: TextStyle(fontSize: 10),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  gridData: FlGridData(show: true),
-                  borderData: FlBorderData(show: true),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final idx = value.toInt();
+                        if (idx < 0 || idx >= top.length) return Container();
+                        if (idx % 2 != 0) return Container();
+                        return Transform.rotate(
+                          angle: -0.7,
+                          child: Tooltip(
+                            message: top[idx].key,
+                            child: Text(
+                              top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                              style: TextStyle(fontSize: 10),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
+                gridData: FlGridData(show: true),
+                borderData: FlBorderData(show: true),
               ),
             ),
           ),
@@ -361,54 +371,67 @@ class _StatisticsPageState extends State<StatisticsPage> {
       children: [
         Text('Veröffentlichungen pro Jahr', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: SizedBox(
-              height: 220,
-              child: BarChart(
-                BarChartData(
-                  barGroups: [
-                    for (int i = 0; i < sorted.length; i++)
-                      BarChartGroupData(
-                        x: i,
-                        barRods: [
-                          BarChartRodData(
-                            toY: sorted[i].value.toDouble(),
-                            color: Colors.green,
-                          ),
-                        ],
-                      ),
-                  ],
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) => Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Text(
-                            value.toInt().toString(),
-                            maxLines: 1,
-                            overflow: TextOverflow.visible,
-                            style: TextStyle(fontSize: 12),
-                          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.85,
+            height: 220,
+            child: BarChart(
+              BarChartData(
+                barGroups: [
+                  for (int i = 0; i < sorted.length; i++)
+                    BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: sorted[i].value.toDouble(),
+                          color: Colors.green,
                         ),
-                        reservedSize: 28,
+                      ],
+                    ),
+                ],
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Text(
+                          value.toInt().toString(),
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  gridData: FlGridData(show: true),
-                  borderData: FlBorderData(show: true),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final idx = value.toInt();
+                        // Zeige nur jede 5. Jahreszahl an
+                        if (idx % 5 != 0) return Container();
+                        if (idx < 0 || idx >= sorted.length) return Container();
+                        return Text(
+                          sorted[idx].key,
+                          style: TextStyle(fontSize: 10),
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
+                        );
+                      },
+                      reservedSize: 28,
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
+                gridData: FlGridData(show: true),
+                borderData: FlBorderData(show: true),
               ),
             ),
           ),
