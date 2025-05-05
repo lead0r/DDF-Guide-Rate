@@ -89,15 +89,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       episodes.where((ep) => !ep.isFutureRelease).toList();
 
   Future<void> _showFilterDialog() async {
-    // Filterdaten aus der aktuell gewählten Serie
-    List<Episode> currentEpisodes;
-    if (_tabController.index == 0) {
-      currentEpisodes = getEpisodesForTab(episodes);
-    } else if (_tabController.index == 1) {
-      currentEpisodes = getEpisodesForTab(episodes);
-    } else {
-      currentEpisodes = getEpisodesForTab(episodes);
-    }
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context, listen: false);
+    final episodes = episodeProvider.episodes;
+    List<Episode> currentEpisodes = getEpisodesForTab(episodes);
     if (currentEpisodes.isEmpty) {
       await showDialog(
         context: context,
@@ -358,7 +352,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => StatisticsPage(episodes: episodes),
+                  builder: (_) => StatisticsPage(),
                 ),
               );
             },

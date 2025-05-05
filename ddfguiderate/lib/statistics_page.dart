@@ -15,13 +15,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
   late Map<String, dynamic> statistics;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _calculateStatistics();
   }
 
   void _calculateStatistics() {
-    final episodeProvider = Provider.of<EpisodeStateProvider>(context);
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context, listen: false);
     final episodes = episodeProvider.episodes;
 
     // Allgemeine Statistiken
@@ -87,8 +87,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = MyApp.of(context);
     final episodeProvider = Provider.of<EpisodeStateProvider>(context);
     final episodes = episodeProvider.episodes;
+
+    // Statistiken bei jedem Build neu berechnen (damit sie immer aktuell sind)
+    _calculateStatistics();
 
     return Scaffold(
       appBar: AppBar(
@@ -100,7 +104,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   ? Icons.wb_sunny
                   : Icons.nightlight_round,
             ),
-            onPressed: () => MyApp.of(context)?.toggleTheme(),
+            onPressed: () => appState?.toggleTheme(),
           ),
         ],
       ),
