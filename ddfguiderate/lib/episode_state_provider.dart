@@ -47,6 +47,7 @@ class EpisodeStateProvider extends ChangeNotifier {
     kids = results[1] as List<Episode>;
     dr3i = results[2] as List<Episode>;
     final dbStates = results[3] as List<Map<String, dynamic>>;
+    print('[DEBUG] Alle States aus DB: $dbStates');
 
     void applyState(List<Episode> episodes) {
       for (var ep in episodes) {
@@ -73,6 +74,11 @@ class EpisodeStateProvider extends ChangeNotifier {
     _episodes = [...main, ...kids, ...dr3i];
     _loading = false;
     notifyListeners();
+
+    print('[DEBUG] Spezialfolgen-IDs:');
+    for (var ep in main.where((e) => e.serieTyp == 'Spezial')) {
+      print('[DEBUG] Spezialfolge: ${ep.titel} -> ${ep.id}');
+    }
   }
 
   Future<void> updateEpisode(Episode episode, {String? note, int? rating, bool? listened}) async {

@@ -43,11 +43,19 @@ class Episode {
   }
 
   factory Episode.fromSerieJson(Map<String, dynamic> json) {
-    final id = 'serie_${json['nummer']}';
+    String id;
+    final nummer = json['nummer'];
+    if (nummer != null && nummer.toString().isNotEmpty && nummer != 'null') {
+      id = 'serie_${nummer}';
+    } else if (json['titel'] != null && json['titel'].toString().trim().isNotEmpty) {
+      id = 'serie_' + json['titel'].toString().replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+    } else {
+      id = 'serie_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
+    }
     print('[DEBUG] Erzeuge Episode: $id');
     return Episode(
       id: id,
-      nummer: json['nummer'] ?? 0,
+      nummer: nummer ?? 0,
       titel: json['titel'] ?? '',
       autor: json['autor'] ?? '',
       beschreibung: json['beschreibung'] ?? '',
@@ -63,9 +71,19 @@ class Episode {
   }
 
   factory Episode.fromSpezialJson(Map<String, dynamic> json) {
+    final nummer = json['nummer'];
+    String id;
+    if (nummer != null && nummer.toString().isNotEmpty && nummer != 'null') {
+      id = 'spezial_${nummer}';
+    } else if (json['titel'] != null && json['titel'].toString().trim().isNotEmpty) {
+      id = 'spezial_' + json['titel'].toString().replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+    } else {
+      id = 'spezial_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
+    }
+    print('[DEBUG] Erzeuge Spezial-Episode: $id');
     return Episode(
-      id: 'spezial_${json['nummer']}',
-      nummer: json['nummer'] ?? 0,
+      id: id,
+      nummer: nummer ?? 0,
       titel: json['titel'] ?? '',
       autor: json['autor'] ?? '',
       beschreibung: json['beschreibung'] ?? '',
@@ -81,9 +99,19 @@ class Episode {
   }
 
   factory Episode.fromKurzgeschichteJson(Map<String, dynamic> json) {
+    final nummer = json['nummer'];
+    String id;
+    if (nummer != null && nummer.toString().isNotEmpty && nummer != 'null') {
+      id = 'kurz_${nummer}';
+    } else if (json['titel'] != null && json['titel'].toString().trim().isNotEmpty) {
+      id = 'kurz_' + json['titel'].toString().replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+    } else {
+      id = 'kurz_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
+    }
+    print('[DEBUG] Erzeuge Kurzgeschichte: $id');
     return Episode(
-      id: 'kurz_${json['nummer']}',
-      nummer: json['nummer'] ?? 0,
+      id: id,
+      nummer: nummer ?? 0,
       titel: json['titel'] ?? '',
       autor: json['autor'] ?? '',
       beschreibung: json['beschreibung'] ?? '',
@@ -99,9 +127,19 @@ class Episode {
   }
 
   factory Episode.fromKidsJson(Map<String, dynamic> json) {
+    final nummer = json['nummer'];
+    String id;
+    if (nummer != null && nummer.toString().isNotEmpty && nummer != 'null') {
+      id = 'kids_${nummer}';
+    } else if (json['titel'] != null && json['titel'].toString().trim().isNotEmpty) {
+      id = 'kids_' + json['titel'].toString().replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+    } else {
+      id = 'kids_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
+    }
+    print('[DEBUG] Erzeuge Kids-Episode: $id');
     return Episode(
-      id: 'kids_${json['nummer']}',
-      nummer: json['nummer'] ?? 0,
+      id: id,
+      nummer: nummer ?? 0,
       titel: json['titel'] ?? '',
       autor: json['autor'] ?? '',
       beschreibung: json['beschreibung'] ?? '',
@@ -117,9 +155,19 @@ class Episode {
   }
 
   factory Episode.fromDr3iJson(Map<String, dynamic> json) {
+    final nummer = json['nummer'];
+    String id;
+    if (nummer != null && nummer.toString().isNotEmpty && nummer != 'null') {
+      id = 'dr3i_${nummer}';
+    } else if (json['titel'] != null && json['titel'].toString().trim().isNotEmpty) {
+      id = 'dr3i_' + json['titel'].toString().replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+    } else {
+      id = 'dr3i_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
+    }
+    print('[DEBUG] Erzeuge DR3i-Episode: $id');
     return Episode(
-      id: 'dr3i_${json['nummer']}',
-      nummer: json['nummer'] ?? 0,
+      id: id,
+      nummer: nummer ?? 0,
       titel: json['titel'] ?? '',
       autor: json['autor'] ?? '',
       beschreibung: json['beschreibung'] ?? '',
