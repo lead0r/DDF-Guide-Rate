@@ -110,11 +110,12 @@ class DatabaseService {
     final updateMap = <String, Object?>{
       'episode_id': episodeId,
       'note': note ?? prev?['note'] ?? '',
-      'rating': rating ?? prev?['rating'] ?? 0,
+      'rating': rating != null ? rating : (prev?['rating'] ?? 0),
       'listened': listened != null
           ? (listened ? 1 : 0)
           : prev?['listened'] ?? 0,
     };
+    print('[DEBUG] updateMap: $updateMap');
     // Upsert: Insert mit ConflictAlgorithm.replace
     await dbClient.insert(
       'episode_state',
