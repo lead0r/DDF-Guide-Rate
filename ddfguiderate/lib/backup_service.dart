@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'database_service.dart';
+import 'episode_data_service.dart';
 
 class BackupService {
   static Future<Map<String, dynamic>> getExportData() async {
@@ -85,6 +86,14 @@ class BackupService {
 
         // Nach dem Import: Spezial-Null-States bereinigen
         await db.removeNullSpezialStates();
+
+        // Nach dem Import: Orphaned States bereinigen
+        final dataService = EpisodeDataService();
+        final main = await dataService.fetchAllMainEpisodes();
+        final kids = await dataService.fetchKidsEpisodes();
+        final dr3i = await dataService.fetchDr3iEpisodes();
+        final allEpisodeIds = [...main, ...kids, ...dr3i].map((e) => e.id).toList();
+        await db.removeOrphanedStates(allEpisodeIds);
 
         return 'Backup erfolgreich importiert';
       } catch (e) {

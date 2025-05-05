@@ -67,6 +67,10 @@ class EpisodeStateProvider extends ChangeNotifier {
     applyState(kids);
     applyState(dr3i);
 
+    // --- NEU: Orphaned States bereinigen ---
+    final allEpisodeIds = [...main, ...kids, ...dr3i].map((e) => e.id).toList();
+    await DatabaseService().removeOrphanedStates(allEpisodeIds);
+
     await prefs.setString('mainEpisodes', jsonEncode(main.map((e) => e.toJson()).toList()));
     await prefs.setString('kidsEpisodes', jsonEncode(kids.map((e) => e.toJson()).toList()));
     await prefs.setString('dr3iEpisodes', jsonEncode(dr3i.map((e) => e.toJson()).toList()));

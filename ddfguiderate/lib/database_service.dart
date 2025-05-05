@@ -212,4 +212,14 @@ class DatabaseService {
       whereArgs: ['spezial_null'],
     );
   }
+
+  Future<void> removeOrphanedStates(List<String> validEpisodeIds) async {
+    if (validEpisodeIds.isEmpty) return;
+    final dbClient = await db;
+    await dbClient.delete(
+      'episode_state',
+      where: 'episode_id NOT IN (${List.filled(validEpisodeIds.length, '?').join(',')})',
+      whereArgs: validEpisodeIds,
+    );
+  }
 } 
