@@ -280,10 +280,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Widget _buildAuthorBarChartSection() {
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context, listen: false);
+    final episodes = episodeProvider.episodes;
     final Map<String, int> authorCounts = Map<String, int>.from(statistics['authorCounts'] as Map);
     final sorted = authorCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final top = sorted.take(10).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -304,10 +307,24 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         BarChartRodData(
                           toY: top[i].value.toDouble(),
                           color: Colors.blue,
+                          width: 18,
+                          borderRadius: BorderRadius.circular(4),
+                          rodStackItems: [],
                         ),
                       ],
                     ),
                 ],
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchCallback: (event, response) {
+                    if (event.isInterestedForInteractions && response != null && response.spot != null) {
+                      final idx = response.spot!.touchedBarGroupIndex;
+                      if (idx >= 0 && idx < top.length) {
+                        _showAuthorEpisodesDialog(context, top[idx].key, episodes);
+                      }
+                    }
+                  },
+                ),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
@@ -330,15 +347,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         final idx = value.toInt();
                         if (idx < 0 || idx >= top.length) return Container();
                         if (idx % 2 != 0) return Container();
-                        return Transform.rotate(
-                          angle: -0.7,
-                          child: Tooltip(
-                            message: top[idx].key,
-                            child: Text(
-                              top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
-                              style: TextStyle(fontSize: 10),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                        return GestureDetector(
+                          onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
+                          child: Transform.rotate(
+                            angle: -0.7,
+                            child: Tooltip(
+                              message: top[idx].key,
+                              child: Text(
+                                top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                                style: TextStyle(fontSize: 10, decoration: TextDecoration.underline, color: Colors.blue),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
                             ),
                           ),
                         );
@@ -587,6 +607,54 @@ class _StatisticsPageState extends State<StatisticsPage> {
         ),
         SizedBox(height: 12),
       ],
+    );
+  }
+
+  void _showAuthorEpisodesDialog(BuildContext context, String author, List<Episode> episodes) {
+    final authorEpisodes = episodes.where((ep) => ep.autor == author).toList();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(author),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: authorEpisodes.length,
+            itemBuilder: (context, index) {
+              final ep = authorEpisodes[index];
+              return ListTile(
+                leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => EpisodeDetailPage(episode: ep),
+                          ));
+                        },
+                        child: Image.network(ep.coverUrl!, width: 32, height: 32, fit: BoxFit.cover),
+                      )
+                    : Icon(Icons.album, size: 32),
+                title: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => EpisodeDetailPage(episode: ep),
+                    ));
+                  },
+                  child: Text(ep.titel, style: TextStyle(decoration: TextDecoration.underline)),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Schließen'),
+          ),
+        ],
+      ),
     );
   }
 }
