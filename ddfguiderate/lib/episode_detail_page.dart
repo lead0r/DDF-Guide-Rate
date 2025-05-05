@@ -22,6 +22,7 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   bool _listened = false;
   bool _saving = false;
   bool _editingNote = false;
+  bool _showLargeCover = false;
 
   @override
   void initState() {
@@ -152,235 +153,282 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (ep.coverUrl != null && ep.coverUrl!.isNotEmpty)
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: CachedNetworkImage(
-                    imageUrl: ep.coverUrl!,
-                    height: 200,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => CircularProgressIndicator(),
-                    errorWidget: (context, url, error) => Icon(Icons.broken_image),
-                  ),
-                ),
-              ),
-            SizedBox(height: 16),
-            Row(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Autor: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(ep.autor),
-              ],
-            ),
-            SizedBox(height: 8),
-            if (ep.veroeffentlichungsdatum != null)
-              Row(
-                children: [
-                  Text('Veröffentlichung: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(_formatDate(ep.veroeffentlichungsdatum)),
-                ],
-              ),
-            SizedBox(height: 16),
-            Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
-            SizedBox(height: 16),
-            FutureBuilder<String>(
-              future: _getProviderName(),
-              builder: (context, snapshot) {
-                final provider = snapshot.data ?? 'Spotify';
-                return ElevatedButton.icon(
-                  icon: Icon(Icons.play_arrow),
-                  label: Text('Auf $provider abspielen'),
-                  onPressed: _openStreaming,
-                );
-              },
-            ),
-            SizedBox(height: 16),
-            if (ep.sprechrollen != null && ep.sprechrollen!.isNotEmpty) ...[
-              Text('Sprecher:', style: Theme.of(context).textTheme.titleMedium),
-              ...ep.sprechrollen!.map<Widget>((s) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Text('${s['rolle'] ?? ''}: ${s['sprecher'] ?? ''}'),
-              )),
-              SizedBox(height: 12),
-            ],
-            if ((ep.links['dreifragezeichen'] != null) && (ep.serieTyp == 'Serie' || ep.serieTyp == 'Kids'))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: ElevatedButton.icon(
-                  icon: Icon(Icons.link),
-                  label: Text('Offizielle Episodenseite'),
-                  onPressed: () async {
-                    final url = ep.links['dreifragezeichen'];
-                    if (url != null && await canLaunch(url)) {
-                      await launch(url);
-                    }
-                  },
-                ),
-              ),
-            SizedBox(height: 12),
-            Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
-            if (_editingNote) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _noteController,
-                      minLines: 2,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: 'Deine Notiz zur Folge...',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.save, color: Colors.blue),
-                    tooltip: 'Notiz speichern',
-                    onPressed: () {
-                      if (_noteController.text.trim().isNotEmpty) {
-                        _saveNote();
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ] else if ((ep.note ?? '').isNotEmpty) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
+                if (ep.coverUrl != null && ep.coverUrl!.isNotEmpty)
+                  Center(
+                    child: GestureDetector(
                       onTap: () {
                         setState(() {
-                          _editingNote = true;
-                          _noteController.text = ep.note ?? '';
+                          _showLargeCover = true;
                         });
                       },
-                      child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 8),
-                        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black,
-                            width: 1.2,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          ep.note ?? '',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black,
-                          ),
-                          textAlign: TextAlign.left,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: CachedNetworkImage(
+                          imageUrl: ep.coverUrl!,
+                          height: 200,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => CircularProgressIndicator(),
+                          errorWidget: (context, url, error) => Icon(Icons.broken_image),
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(width: 8),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text('Autor: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(ep.autor),
+                  ],
+                ),
+                SizedBox(height: 8),
+                if (ep.veroeffentlichungsdatum != null)
+                  Row(
+                    children: [
+                      Text('Veröffentlichung: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(_formatDate(ep.veroeffentlichungsdatum)),
+                    ],
+                  ),
+                SizedBox(height: 16),
+                Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
+                SizedBox(height: 16),
+                FutureBuilder<String>(
+                  future: _getProviderName(),
+                  builder: (context, snapshot) {
+                    final provider = snapshot.data ?? 'Spotify';
+                    return ElevatedButton.icon(
+                      icon: Icon(Icons.play_arrow),
+                      label: Text('Auf $provider abspielen'),
+                      onPressed: _openStreaming,
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+                if (ep.sprechrollen != null && ep.sprechrollen!.isNotEmpty) ...[
+                  Text('Sprecher:', style: Theme.of(context).textTheme.titleMedium),
+                  ...ep.sprechrollen!.map<Widget>((s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Text('${s['rolle'] ?? ''}: ${s['sprecher'] ?? ''}'),
+                  )),
+                  SizedBox(height: 12),
+                ],
+                if ((ep.links['dreifragezeichen'] != null) && (ep.serieTyp == 'Serie' || ep.serieTyp == 'Kids'))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: ElevatedButton.icon(
+                      icon: Icon(Icons.link),
+                      label: Text('Offizielle Episodenseite'),
+                      onPressed: () async {
+                        final url = ep.links['dreifragezeichen'];
+                        if (url != null && await canLaunch(url)) {
+                          await launch(url);
+                        }
+                      },
+                    ),
+                  ),
+                SizedBox(height: 12),
+                Text('Notiz', style: Theme.of(context).textTheme.titleMedium),
+                if (_editingNote) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _noteController,
+                          minLines: 2,
+                          maxLines: 5,
+                          decoration: InputDecoration(
+                            hintText: 'Deine Notiz zur Folge...',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.save, color: Colors.blue),
+                        tooltip: 'Notiz speichern',
+                        onPressed: () {
+                          if (_noteController.text.trim().isNotEmpty) {
+                            _saveNote();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ] else if ((ep.note ?? '').isNotEmpty) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
-                        tooltip: 'Bearbeiten',
-                        onPressed: () {
-                          setState(() {
-                            _editingNote = true;
-                            _noteController.text = ep.note ?? '';
-                          });
-                        },
+                      Expanded(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            setState(() {
+                              _editingNote = true;
+                              _noteController.text = ep.note ?? '';
+                            });
+                          },
+                          child: Container(
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              border: Border.all(
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                                width: 1.2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              ep.note ?? '',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                          ),
+                        ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        tooltip: 'Löschen',
-                        onPressed: _deleteNote,
+                      SizedBox(width: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            tooltip: 'Bearbeiten',
+                            onPressed: () {
+                              setState(() {
+                                _editingNote = true;
+                                _noteController.text = ep.note ?? '';
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            tooltip: 'Löschen',
+                            onPressed: _deleteNote,
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ],
-              ),
-            ],
-            SizedBox(height: 8),
-            Text('Bewertung', style: Theme.of(context).textTheme.titleMedium),
-            Row(
-              children: List.generate(5, (i) => IconButton(
-                icon: Icon(
-                  i < _rating ? Icons.star : Icons.star_border,
-                  color: Colors.amber,
+                SizedBox(height: 8),
+                Text('Bewertung', style: Theme.of(context).textTheme.titleMedium),
+                Row(
+                  children: List.generate(5, (i) => IconButton(
+                    icon: Icon(
+                      i < _rating ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        if (_rating == i + 1) {
+                          _rating = 0;
+                        } else {
+                          _rating = i + 1;
+                        }
+                      });
+                      _saveState();
+                    },
+                  )),
                 ),
-                onPressed: () {
-                  setState(() {
-                    if (_rating == i + 1) {
-                      _rating = 0;
-                    } else {
-                      _rating = i + 1;
-                    }
-                  });
-                  _saveState();
-                },
-              )),
-            ),
-            SizedBox(height: 16),
-            InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: () {
-                setState(() => _listened = !_listened);
-                _saveState();
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _listened ? Icons.check_box : Icons.check_box_outline_blank,
-                    color: _listened ? Colors.green : null,
+                SizedBox(height: 16),
+                InkWell(
+                  borderRadius: BorderRadius.circular(4),
+                  onTap: () {
+                    setState(() => _listened = !_listened);
+                    _saveState();
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _listened ? Icons.check_box : Icons.check_box_outline_blank,
+                        color: _listened ? Colors.green : null,
+                      ),
+                      SizedBox(width: 8),
+                      Text('Gehört'),
+                    ],
                   ),
-                  SizedBox(width: 8),
-                  Text('Gehört'),
+                ),
+                SizedBox(height: 16),
+                FutureBuilder<List<Map<String, dynamic>>>(
+                  future: DatabaseService().getHistory(ep.id),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) return SizedBox();
+                    final history = snapshot.data!;
+                    return ExpansionTile(
+                      title: Text('Änderungsverlauf', style: Theme.of(context).textTheme.bodySmall),
+                      initiallyExpanded: false,
+                      children: [
+                        ...history.take(5).map((h) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 16),
+                          child: Text(
+                            '${_formatHistoryDate(h['timestamp'])}: '
+                            'Notiz: ${h['note'] ?? ''} | Bewertung: ${h['rating'] ?? ''} | Gehört: ${(h['listened'] ?? 0) == 1 ? 'Ja' : 'Nein'}',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        )),
+                      ],
+                    );
+                  },
+                ),
+                SizedBox(height: 48),
+                if (_saving) ...[
+                  SizedBox(height: 16),
+                  Center(child: CircularProgressIndicator()),
                 ],
+                SizedBox(height: 32),
+              ],
+            ),
+          ),
+          if (_showLargeCover)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showLargeCover = false;
+                  });
+                },
+                child: Container(
+                  color: Colors.black.withOpacity(0.95),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: CachedNetworkImage(
+                          imageUrl: ep.coverUrl!,
+                          fit: BoxFit.contain,
+                          errorWidget: (context, url, error) => Icon(Icons.broken_image, size: 120, color: Colors.white),
+                        ),
+                      ),
+                      Positioned(
+                        top: 40,
+                        right: 24,
+                        child: IconButton(
+                          icon: Icon(Icons.close, color: Colors.white, size: 36),
+                          onPressed: () {
+                            setState(() {
+                              _showLargeCover = false;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            SizedBox(height: 16),
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: DatabaseService().getHistory(ep.id),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.isEmpty) return SizedBox();
-                final history = snapshot.data!;
-                return ExpansionTile(
-                  title: Text('Änderungsverlauf', style: Theme.of(context).textTheme.bodySmall),
-                  initiallyExpanded: false,
-                  children: [
-                    ...history.take(5).map((h) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 16),
-                      child: Text(
-                        '${_formatHistoryDate(h['timestamp'])}: '
-                        'Notiz: ${h['note'] ?? ''} | Bewertung: ${h['rating'] ?? ''} | Gehört: ${(h['listened'] ?? 0) == 1 ? 'Ja' : 'Nein'}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    )),
-                  ],
-                );
-              },
-            ),
-            SizedBox(height: 48),
-            if (_saving) ...[
-              SizedBox(height: 16),
-              Center(child: CircularProgressIndicator()),
-            ],
-            SizedBox(height: 32),
-          ],
-        ),
+        ],
       ),
     );
   }
