@@ -409,6 +409,17 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                 decoration: InputDecoration(
                   hintText: 'Suche Episoden...',
                   prefixIcon: Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _search = '';
+                            });
+                          },
+                        )
+                      : null,
                   border: OutlineInputBorder(),
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
