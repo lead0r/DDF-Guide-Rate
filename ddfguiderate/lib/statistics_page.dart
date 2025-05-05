@@ -255,16 +255,33 @@ class _StatisticsPageState extends State<StatisticsPage> {
             child: Column(
               children: top10.map((ep) => ListTile(
                 leading: ep.coverUrl != null && ep.coverUrl!.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: ep.coverUrl!,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => CircularProgressIndicator(),
-                        errorWidget: (context, url, error) => Icon(Icons.broken_image),
+                    ? GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => EpisodeDetailPage(episode: ep),
+                          ));
+                        },
+                        child: CachedNetworkImage(
+                          imageUrl: ep.coverUrl!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => CircularProgressIndicator(),
+                          errorWidget: (context, url, error) => Icon(Icons.broken_image),
+                        ),
                       )
                     : Icon(Icons.album),
-                title: Text('${ep.nummer} / ${ep.titel}'),
+                title: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => EpisodeDetailPage(episode: ep),
+                    ));
+                  },
+                  child: Text(
+                    '${ep.nummer} / ${ep.titel}',
+                    style: TextStyle(decoration: TextDecoration.underline),
+                  ),
+                ),
                 subtitle: Row(
                   children: List.generate(5, (i) => Icon(
                     ep.rating > i ? Icons.star : Icons.star_border,
@@ -344,13 +361,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 44,
+                      reservedSize: 64,
                       getTitlesWidget: (value, meta) {
                         final idx = value.toInt();
                         if (idx < 0 || idx >= top.length) return Container();
                         if (idx % 2 != 0) return Container();
                         return Padding(
-                          padding: const EdgeInsets.only(top: 12),
+                          padding: const EdgeInsets.only(top: 24),
                           child: GestureDetector(
                             onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
                             child: Transform.rotate(
@@ -360,7 +377,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                 child: Text(
                                   top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 9,
                                     decoration: TextDecoration.underline,
                                     color: Colors.blue,
                                   ),
