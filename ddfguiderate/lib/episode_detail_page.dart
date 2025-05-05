@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:provider/provider.dart';
 import 'episode.dart';
 import 'database_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'episode_state_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class EpisodeDetailPage extends StatefulWidget {
@@ -21,7 +22,6 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   bool _listened = false;
   bool _saving = false;
   bool _editingNote = false;
-  bool _loading = true;
 
   @override
   void initState() {
@@ -34,30 +34,51 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
 
   Future<void> _saveState() async {
     setState(() => _saving = true);
-    await DatabaseService().updateEpisodeState(
-      widget.episode.id,
+    await Provider.of<EpisodeStateProvider>(context, listen: false).updateEpisode(
+      widget.episode,
       note: _noteController.text,
       rating: _rating,
       listened: _listened,
     );
-    widget.episode.rating = _rating;
-    widget.episode.listened = _listened;
-    widget.episode.note = _noteController.text;
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gespeichert!')),
     );
   }
 
-  Future<void> _reloadState() async {
-    final state = await DatabaseService().getEpisodeState(widget.episode.id);
-    if (state != null) {
-      setState(() {
-        _rating = state['rating'] ?? 0;
-        _listened = (state['listened'] ?? 0) == 1;
-        _noteController.text = state['note'] ?? '';
-      });
-    }
+  Future<void> _saveNote() async {
+    setState(() => _saving = true);
+    await Provider.of<EpisodeStateProvider>(context, listen: false).updateEpisode(
+      widget.episode,
+      note: _noteController.text,
+      rating: _rating,
+      listened: _listened,
+    );
+    setState(() {
+      _saving = false;
+      _editingNote = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Notiz gespeichert!')),
+    );
+  }
+
+  Future<void> _deleteNote() async {
+    setState(() => _saving = true);
+    await Provider.of<EpisodeStateProvider>(context, listen: false).updateEpisode(
+      widget.episode,
+      note: '',
+      rating: _rating,
+      listened: _listened,
+    );
+    _noteController.clear();
+    setState(() {
+      _saving = false;
+      _editingNote = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Notiz gelöscht!')),
+    );
   }
 
   void _share() {
@@ -110,46 +131,11 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     }
   }
 
-  Future<void> _saveNote() async {
-    setState(() => _saving = true);
-    await DatabaseService().updateEpisodeState(
-      widget.episode.id,
-      note: _noteController.text,
-      rating: _rating,
-      listened: _listened,
-    );
-    widget.episode.note = _noteController.text;
-    setState(() {
-      _saving = false;
-      _editingNote = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Notiz gespeichert!')),
-    );
-  }
-
-  Future<void> _deleteNote() async {
-    setState(() => _saving = true);
-    await DatabaseService().updateEpisodeState(
-      widget.episode.id,
-      note: '',
-      rating: _rating,
-      listened: _listened,
-    );
-    widget.episode.note = '';
-    _noteController.clear();
-    setState(() {
-      _saving = false;
-      _editingNote = true;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Notiz gelöscht!')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final ep = widget.episode;
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context);
+    final ep = episodeProvider.episodes.firstWhere((e) => e.id == widget.episode.id, orElse: () => widget.episode);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('${ep.nummer} / ${ep.titel}'),
@@ -335,7 +321,13 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                   color: Colors.amber,
                 ),
                 onPressed: () {
-                  setState(() => _rating = i + 1);
+                  setState(() {
+                    if (_rating == i + 1) {
+                      _rating = 0;
+                    } else {
+                      _rating = i + 1;
+                    }
+                  });
                   _saveState();
                 },
               )),

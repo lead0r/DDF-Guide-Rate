@@ -3,12 +3,10 @@ import 'main.dart';
 import 'episode.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
+import 'episode_state_provider.dart';
 
 class StatisticsPage extends StatefulWidget {
-  final List<Episode> episodes;
-
-  StatisticsPage({required this.episodes});
-
   @override
   _StatisticsPageState createState() => _StatisticsPageState();
 }
@@ -23,7 +21,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   void _calculateStatistics() {
-    final episodes = widget.episodes;
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context);
+    final episodes = episodeProvider.episodes;
 
     // Allgemeine Statistiken
     int totalEpisodes = episodes.length;
@@ -86,10 +85,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
     };
   }
 
-  // Ändere die body-Methode wie folgt
   @override
   Widget build(BuildContext context) {
-    final appState = MyApp.of(context);
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context);
+    final episodes = episodeProvider.episodes;
 
     return Scaffold(
       appBar: AppBar(
@@ -101,7 +100,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   ? Icons.wb_sunny
                   : Icons.nightlight_round,
             ),
-            onPressed: () => appState?.toggleTheme(),
+            onPressed: () => MyApp.of(context)?.toggleTheme(),
           ),
         ],
       ),
@@ -114,23 +113,23 @@ class _StatisticsPageState extends State<StatisticsPage> {
             SizedBox(height: 24),
             // Fortschritt pro Serie (rot/grüne Balken)
             buildProgressTimeline(
-              widget.episodes.where((e) => e.serieTyp == 'Serie').toList(),
+              episodes.where((e) => e.serieTyp == 'Serie').toList(),
               '???'
             ),
             buildProgressTimeline(
-              widget.episodes.where((e) => e.serieTyp == 'Kids').toList(),
+              episodes.where((e) => e.serieTyp == 'Kids').toList(),
               'Kids'
             ),
             buildProgressTimeline(
-              widget.episodes.where((e) => e.serieTyp == 'DR3i').toList(),
+              episodes.where((e) => e.serieTyp == 'DR3i').toList(),
               'DR3i'
             ),
             buildProgressTimeline(
-              widget.episodes.where((e) => e.serieTyp == 'Spezial').toList(),
+              episodes.where((e) => e.serieTyp == 'Spezial').toList(),
               'Spezial'
             ),
             buildProgressTimeline(
-              widget.episodes.where((e) => e.serieTyp == 'Kurzgeschichte').toList(),
+              episodes.where((e) => e.serieTyp == 'Kurzgeschichte').toList(),
               'Kurzgeschichten'
             ),
             SizedBox(height: 24),

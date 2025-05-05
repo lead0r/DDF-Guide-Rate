@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'episode.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'episode_state_provider.dart';
 
 class TimelinePage extends StatelessWidget {
-  final List<Episode> episodes;
-  TimelinePage({required this.episodes});
-
   @override
   Widget build(BuildContext context) {
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context);
+    final episodes = episodeProvider.episodes;
+
     // Nach Jahr gruppieren
     final sorted = List<Episode>.from(episodes)
       ..sort((a, b) => (a.veroeffentlichungsdatum ?? '').compareTo(b.veroeffentlichungsdatum ?? ''));

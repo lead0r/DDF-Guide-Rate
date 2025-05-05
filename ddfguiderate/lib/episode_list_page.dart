@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'episode.dart';
-import 'episode_data_service.dart';
 import 'episode_detail_page.dart';
 import 'backup_service.dart';
 import 'statistics_page.dart';
 import 'settings_page.dart';
 import 'main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'database_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'episode_state_provider.dart';
 
 class EpisodeListPage extends StatefulWidget {
   @override
@@ -19,14 +17,9 @@ class EpisodeListPage extends StatefulWidget {
 class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
-  List<Episode> _mainEpisodes = [];
-  List<Episode> _kidsEpisodes = [];
-  List<Episode> _dr3iEpisodes = [];
-  bool _loading = true;
   String _search = '';
   bool _showFuture = false;
-  String _sortBy = 'date'; // 'date' oder 'number'
-  // Filter-Status
+  String _sortBy = 'date';
   String _selectedAuthor = '';
   String _selectedYear = '';
   int _selectedRating = -1;
@@ -36,7 +29,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadEpisodes();
     _searchController.addListener(() {
       setState(() {
         _search = _searchController.text;
@@ -44,77 +36,67 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     });
   }
 
-  Future<void> _loadEpisodes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedMain = prefs.getString('mainEpisodes');
-    final cachedKids = prefs.getString('kidsEpisodes');
-    final cachedDr3i = prefs.getString('dr3iEpisodes');
-
-    if (cachedMain != null && cachedKids != null && cachedDr3i != null) {
-      setState(() {
-        _mainEpisodes = (jsonDecode(cachedMain) as List)
-            .map((e) => Episode.fromJson(e)).toList();
-        _kidsEpisodes = (jsonDecode(cachedKids) as List)
-            .map((e) => Episode.fromJson(e)).toList();
-        _dr3iEpisodes = (jsonDecode(cachedDr3i) as List)
-            .map((e) => Episode.fromJson(e)).toList();
-        _loading = false;
-      });
+  List<Episode> getEpisodesForTab(List<Episode> episodes) {
+    switch (_tabController.index) {
+      case 0:
+        return episodes.where((e) => e.serieTyp == 'Serie' || e.serieTyp == 'Spezial' || e.serieTyp == 'Kurzgeschichte').toList();
+      case 1:
+        return episodes.where((e) => e.serieTyp == 'Kids').toList();
+      case 2:
+        return episodes.where((e) => e.serieTyp == 'DR3i').toList();
+      default:
+        return [];
     }
-
-    setState(() => _loading = true);
-    final dataService = EpisodeDataService();
-    final results = await Future.wait([
-      dataService.fetchAllMainEpisodes(),
-      dataService.fetchKidsEpisodes(),
-      dataService.fetchDr3iEpisodes(),
-      DatabaseService().getAllStates(),
-    ]);
-    final main = results[0] as List<Episode>;
-    final kids = results[1] as List<Episode>;
-    final dr3i = results[2] as List<Episode>;
-    final dbStates = results[3] as List<Map<String, dynamic>>;
-
-    // Lade States aus DB und mapp sie auf die Episoden
-    void applyState(List<Episode> episodes) {
-      for (var ep in episodes) {
-        final state = dbStates.firstWhere(
-          (s) => s['episode_id'] == ep.id,
-          orElse: () => {},
-        );
-        if (state.isNotEmpty) {
-          print('[DEBUG] applyState: ${ep.id} <- listened=${state['listened']}, rating=${state['rating']}, note=${state['note']}');
-          ep.listened = (state['listened'] ?? 0) == 1;
-          ep.rating = state['rating'] ?? 0;
-          ep.note = state['note'] ?? '';
-        }
-      }
-    }
-    applyState(main);
-    applyState(kids);
-    applyState(dr3i);
-
-    await prefs.setString('mainEpisodes', jsonEncode(main.map((e) => e.toJson()).toList()));
-    await prefs.setString('kidsEpisodes', jsonEncode(kids.map((e) => e.toJson()).toList()));
-    await prefs.setString('dr3iEpisodes', jsonEncode(dr3i.map((e) => e.toJson()).toList()));
-
-    setState(() {
-      _mainEpisodes = main;
-      _kidsEpisodes = kids;
-      _dr3iEpisodes = dr3i;
-      _loading = false;
-    });
   }
+
+  List<Episode> _filterAndSort(List<Episode> episodes) {
+    List<Episode> filtered = episodes.where((ep) =>
+      (_search.isEmpty ||
+        ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
+        ep.nummer.toString().contains(_search) ||
+        (ep.autor.toLowerCase().contains(_search.toLowerCase()))) &&
+      (_selectedAuthor == '' || ep.autor == _selectedAuthor) &&
+      (_selectedYear == '' || (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.startsWith(_selectedYear))) &&
+      (_selectedRating == -1 || ep.rating == _selectedRating) &&
+      (_selectedListened == '' || (_selectedListened == 'true' ? ep.listened : !ep.listened))
+    ).toList();
+    switch (_sortBy) {
+      case 'date':
+        filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
+        break;
+      case 'oldest':
+        filtered.sort((a, b) => (a.veroeffentlichungsdatum ?? '').compareTo(b.veroeffentlichungsdatum ?? ''));
+        break;
+      case 'rating_high':
+        filtered.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'rating_low':
+        filtered.sort((a, b) => a.rating.compareTo(b.rating));
+        break;
+      case 'title':
+        filtered.sort((a, b) => a.titel.toLowerCase().compareTo(b.titel.toLowerCase()));
+        break;
+      case 'number':
+        filtered.sort((a, b) => b.nummer.compareTo(a.nummer));
+        break;
+    }
+    return filtered;
+  }
+
+  List<Episode> _futureEpisodes(List<Episode> episodes) =>
+      episodes.where((ep) => ep.isFutureRelease).toList();
+  List<Episode> _pastEpisodes(List<Episode> episodes) =>
+      episodes.where((ep) => !ep.isFutureRelease).toList();
 
   Future<void> _showFilterDialog() async {
     // Filterdaten aus der aktuell gewählten Serie
     List<Episode> currentEpisodes;
     if (_tabController.index == 0) {
-      currentEpisodes = _mainEpisodes;
+      currentEpisodes = getEpisodesForTab(episodes);
     } else if (_tabController.index == 1) {
-      currentEpisodes = _kidsEpisodes;
+      currentEpisodes = getEpisodesForTab(episodes);
     } else {
-      currentEpisodes = _dr3iEpisodes;
+      currentEpisodes = getEpisodesForTab(episodes);
     }
     if (currentEpisodes.isEmpty) {
       await showDialog(
@@ -278,45 +260,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     }
   }
 
-  List<Episode> _filterAndSort(List<Episode> episodes) {
-    List<Episode> filtered = episodes.where((ep) =>
-      (_search.isEmpty ||
-        ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
-        ep.nummer.toString().contains(_search) ||
-        (ep.autor.toLowerCase().contains(_search.toLowerCase()))) &&
-      (_selectedAuthor == '' || ep.autor == _selectedAuthor) &&
-      (_selectedYear == '' || (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.startsWith(_selectedYear))) &&
-      (_selectedRating == -1 || ep.rating == _selectedRating) &&
-      (_selectedListened == '' || (_selectedListened == 'true' ? ep.listened : !ep.listened))
-    ).toList();
-    switch (_sortBy) {
-      case 'date':
-        filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => (a.veroeffentlichungsdatum ?? '').compareTo(b.veroeffentlichungsdatum ?? ''));
-        break;
-      case 'rating_high':
-        filtered.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case 'rating_low':
-        filtered.sort((a, b) => a.rating.compareTo(b.rating));
-        break;
-      case 'title':
-        filtered.sort((a, b) => a.titel.toLowerCase().compareTo(b.titel.toLowerCase()));
-        break;
-      case 'number':
-        filtered.sort((a, b) => b.nummer.compareTo(a.nummer));
-        break;
-    }
-    return filtered;
-  }
-
-  List<Episode> _futureEpisodes(List<Episode> episodes) =>
-      episodes.where((ep) => ep.isFutureRelease).toList();
-  List<Episode> _pastEpisodes(List<Episode> episodes) =>
-      episodes.where((ep) => !ep.isFutureRelease).toList();
-
   void _showSortDialog() {
     showDialog(
       context: context,
@@ -382,19 +325,13 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     );
   }
 
-  List<Episode> get _allEpisodes =>
-      [..._mainEpisodes, ..._kidsEpisodes, ..._dr3iEpisodes];
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final appState = MyApp.of(context);
+    final episodeProvider = Provider.of<EpisodeStateProvider>(context);
+    final episodes = episodeProvider.episodes;
+    final loading = episodeProvider.loading;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -421,16 +358,15 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => StatisticsPage(episodes: _allEpisodes),
+                  builder: (_) => StatisticsPage(episodes: episodes),
                 ),
               );
-              _loadEpisodes(); // Nach Rückkehr Episoden neu laden
             },
           ),
           IconButton(
             icon: Icon(Icons.filter_alt),
             tooltip: 'Filter',
-            onPressed: _loading ? null : _showFilterDialog,
+            onPressed: _showFilterDialog,
           ),
           IconButton(
             icon: Icon(Icons.settings),
@@ -471,14 +407,14 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             ),
           ),
           Expanded(
-            child: _loading
+            child: loading
                 ? Center(child: CircularProgressIndicator())
                 : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildList(_mainEpisodes),
-                      _buildList(_kidsEpisodes),
-                      _buildList(_dr3iEpisodes),
+                      _buildList(getEpisodesForTab(episodes)),
+                      _buildList(getEpisodesForTab(episodes)),
+                      _buildList(getEpisodesForTab(episodes)),
                     ],
                   ),
           ),
@@ -560,15 +496,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             )
           : null,
       onTap: () async {
-        final result = await Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => EpisodeDetailPage(episode: ep),
           ),
         );
-        if (result == true) {
-          _loadEpisodes(); // Episoden neu laden!
-        }
       },
     );
   }

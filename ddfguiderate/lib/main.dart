@@ -4,6 +4,8 @@ import 'episode_list_page.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'background_service.dart';
+import 'package:provider/provider.dart';
+import 'episode_state_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +34,12 @@ void main() async {
   );
   BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
 
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => EpisodeStateProvider()..loadEpisodes(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
