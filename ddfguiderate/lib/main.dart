@@ -35,7 +35,7 @@ void main() async {
   );
   BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
 
-  await databaseService.removeNullSpezialStates();
+  await DatabaseService().removeNullSpezialStates();
 
   runApp(
     ChangeNotifierProvider(
