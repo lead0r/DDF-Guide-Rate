@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'episode_state_provider.dart';
+import 'episode_detail_page.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
