@@ -24,6 +24,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   String _selectedYear = '';
   int _selectedRating = -1;
   String _selectedListened = '';
+  String _selectedType = '';
 
   @override
   void initState() {
@@ -58,7 +59,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       (_selectedAuthor == '' || ep.autor == _selectedAuthor) &&
       (_selectedYear == '' || (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.startsWith(_selectedYear))) &&
       (_selectedRating == -1 || ep.rating == _selectedRating) &&
-      (_selectedListened == '' || (_selectedListened == 'true' ? ep.listened : !ep.listened))
+      (_selectedListened == '' || (_selectedListened == 'true' ? ep.listened : !ep.listened)) &&
+      (
+        _selectedType == '' ||
+        (_selectedType == 'Spezial' && ep.serieTyp == 'Spezial') ||
+        (_selectedType == 'Kurzgeschichte' && ep.serieTyp == 'Kurzgeschichte')
+      )
     ).toList();
     switch (_sortBy) {
       case 'date':
@@ -125,20 +131,26 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     final sortedYears = years.where((y) => y.isNotEmpty).toList()..sort((a, b) => b.compareTo(a));
     final ratingList = List.generate(5, (i) => 5 - i);
     final listenedValues = ['', 'true', 'false'];
+    final typeItems = [
+      DropdownMenuItem(value: '', child: Text('Alle Folgen')),
+      DropdownMenuItem(value: 'Spezial', child: Text('Nur Spezialfolgen')),
+      DropdownMenuItem(value: 'Kurzgeschichte', child: Text('Nur Kurzgeschichten')),
+    ];
 
     // Lokale Kopien der Filterwerte
     String authorValue = _selectedAuthor;
     String yearValue = _selectedYear;
     int ratingValue = _selectedRating;
     String listenedValue = _selectedListened;
+    String typeValue = _selectedType;
 
     // Wert auf gültigen Wert mappen
     if (!sortedAuthors.contains(authorValue)) authorValue = '';
     if (!sortedYears.contains(yearValue)) yearValue = '';
     if (!ratingList.contains(ratingValue)) ratingValue = -1;
     if (!listenedValues.contains(listenedValue)) listenedValue = '';
+    if (!['', 'Spezial', 'Kurzgeschichte'].contains(typeValue)) typeValue = '';
 
-    // Autoren-Dropdown mit Overflow-Schutz:
     final authorItems = sortedAuthors.isEmpty
       ? [DropdownMenuItem(value: '', child: Text('Keine Autoren'))]
       : [DropdownMenuItem(value: '', child: Text('Alle Autoren'))] +
@@ -163,12 +175,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       DropdownMenuItem(value: 'true', child: Text('Gehört')),
       DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
     ];
-
-    // Debug-Ausgaben für Dropdowns
-    print('authorItems: \\${authorItems.map((e) => e.value)}, authorValue: $authorValue');
-    print('yearItems: \\${yearItems.map((e) => e.value)}, yearValue: $yearValue');
-    print('ratingItems: \\${ratingItems.map((e) => e.value)}, ratingValue: $ratingValue');
-    print('listenedItems: \\${listenedItems.map((e) => e.value)}, listenedValue: $listenedValue');
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -206,6 +212,13 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   onChanged: (v) => setState(() => listenedValue = v ?? ''),
                   decoration: InputDecoration(labelText: 'Gehört-Status'),
                 ),
+                SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: typeValue,
+                  items: typeItems,
+                  onChanged: (v) => setState(() => typeValue = v ?? ''),
+                  decoration: InputDecoration(labelText: 'Folgentyp'),
+                ),
               ],
             ),
           ),
@@ -217,6 +230,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   'year': '',
                   'rating': -1,
                   'listened': '',
+                  'type': '',
                 });
               },
               child: Text('Zurücksetzen'),
@@ -228,6 +242,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   'year': yearValue,
                   'rating': ratingValue,
                   'listened': listenedValue,
+                  'type': typeValue,
                 });
               },
               child: Text('Anwenden'),
@@ -250,6 +265,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         _selectedYear = result['year'];
         _selectedRating = result['rating'];
         _selectedListened = result['listened'];
+        _selectedType = result['type'] ?? '';
       });
     }
   }
@@ -477,6 +493,16 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                       : Colors.grey[400],
                   size: 22,
                 ),
+          if (ep.serieTyp == 'Spezial')
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.auto_awesome, color: Colors.purple, size: 20, semanticLabel: 'Spezialfolge'),
+            ),
+          if (ep.serieTyp == 'Kurzgeschichte')
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.menu_book, color: Colors.blue, size: 20, semanticLabel: 'Kurzgeschichte'),
+            ),
         ],
       ),
       trailing: ep.isFutureRelease
