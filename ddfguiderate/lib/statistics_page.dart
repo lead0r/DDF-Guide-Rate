@@ -344,21 +344,29 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 44,
                       getTitlesWidget: (value, meta) {
                         final idx = value.toInt();
                         if (idx < 0 || idx >= top.length) return Container();
                         if (idx % 2 != 0) return Container();
-                        return GestureDetector(
-                          onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
-                          child: Transform.rotate(
-                            angle: -0.7,
-                            child: Tooltip(
-                              message: top[idx].key,
-                              child: Text(
-                                top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
-                                style: TextStyle(fontSize: 10, decoration: TextDecoration.underline, color: Colors.blue),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: GestureDetector(
+                            onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
+                            child: Transform.rotate(
+                              angle: -0.7,
+                              child: Tooltip(
+                                message: top[idx].key,
+                                child: Text(
+                                  top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
                             ),
                           ),
