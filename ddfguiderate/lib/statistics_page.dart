@@ -91,8 +91,14 @@ class _StatisticsPageState extends State<StatisticsPage> {
     final episodeProvider = Provider.of<EpisodeStateProvider>(context);
     final episodes = episodeProvider.episodes;
 
-    // Statistiken bei jedem Build neu berechnen (damit sie immer aktuell sind)
     _calculateStatistics();
+
+    // Gruppiere die Episoden nach Typ
+    final mainEpisodes = episodes.where((e) => e.serieTyp == 'Serie').toList();
+    final spezialEpisodes = episodes.where((e) => e.serieTyp == 'Spezial').toList();
+    final kurzEpisodes = episodes.where((e) => e.serieTyp == 'Kurzgeschichte').toList();
+    final kidsEpisodes = episodes.where((e) => e.serieTyp == 'Kids').toList();
+    final dr3iEpisodes = episodes.where((e) => e.serieTyp == 'DR3i').toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -115,27 +121,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
           children: [
             _buildOverviewSection(),
             SizedBox(height: 24),
-            // Fortschritt pro Serie (rot/grüne Balken)
-            buildProgressTimeline(
-              episodes.where((e) => e.serieTyp == 'Serie').toList(),
-              '???'
-            ),
-            buildProgressTimeline(
-              episodes.where((e) => e.serieTyp == 'Kids').toList(),
-              'Kids'
-            ),
-            buildProgressTimeline(
-              episodes.where((e) => e.serieTyp == 'DR3i').toList(),
-              'DR3i'
-            ),
-            buildProgressTimeline(
-              episodes.where((e) => e.serieTyp == 'Spezial').toList(),
-              'Spezial'
-            ),
-            buildProgressTimeline(
-              episodes.where((e) => e.serieTyp == 'Kurzgeschichte').toList(),
-              'Kurzgeschichten'
-            ),
+            // Fortschritt pro Serie (rot/grüne Balken) in gewünschter Reihenfolge
+            _buildProgressTimeline(mainEpisodes, '???'),
+            _buildProgressTimeline(spezialEpisodes, 'Spezial'),
+            _buildProgressTimeline(kurzEpisodes, 'Kurzgeschichten'),
+            _buildProgressTimeline(kidsEpisodes, 'Kids'),
+            _buildProgressTimeline(dr3iEpisodes, 'DR3i'),
             SizedBox(height: 24),
             _buildRatingDistributionSection(),
             SizedBox(height: 24),
@@ -525,32 +516,54 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
-  Widget buildProgressTimeline(List<Episode> episodes, String title) {
+  Widget _buildProgressTimeline(List<Episode> episodes, String title) {
+    if (episodes.isEmpty) return SizedBox();
+
+    // Chronologisch sortieren
     final sorted = List<Episode>.from(episodes)
       ..sort((a, b) => (a.veroeffentlichungsdatum ?? '').compareTo(b.veroeffentlichungsdatum ?? ''));
     final total = sorted.length;
     final listened = sorted.where((e) => e.listened).length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$title: $listened/$total (${total > 0 ? ((listened / total) * 100).toStringAsFixed(1) : '0'}%)', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          '$title: $listened/$total (${total > 0 ? ((listened / total) * 100).toStringAsFixed(1) : '0'}%)',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         SizedBox(
-          height: 24,
-          child: ListView.builder(
+          height: 32,
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: sorted.length,
+            separatorBuilder: (_, __) => SizedBox(width: 2),
             itemBuilder: (context, i) {
               final e = sorted[i];
-              return Container(
-                width: 4,
-                height: 20,
-                margin: EdgeInsets.symmetric(horizontal: 0.5),
-                color: e.listened ? Colors.green : Colors.red,
+              return Tooltip(
+                message: '${e.nummer} / ${e.titel}',
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  width: 8,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: e.listened ? Colors.green : Colors.red,
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      if (e.listened)
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        )
+                    ],
+                  ),
+                ),
               );
             },
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 12),
       ],
     );
   }
