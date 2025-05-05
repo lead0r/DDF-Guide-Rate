@@ -8,6 +8,7 @@ import 'settings_page.dart';
 import 'main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'episode_state_provider.dart';
+import 'database_service.dart';
 
 class EpisodeListPage extends StatefulWidget {
   @override
