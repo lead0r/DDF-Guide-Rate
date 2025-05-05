@@ -318,10 +318,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx < 0 || idx >= top.length) return Container();
-                          // Zeige nur jeden 2. Autor
                           if (idx % 2 != 0) return Container();
                           return Transform.rotate(
-                            angle: -0.7, // ca. 40°
+                            angle: -0.7,
                             child: Tooltip(
                               message: top[idx].key,
                               child: Text(
@@ -334,6 +333,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           );
                         },
                       ),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
                   gridData: FlGridData(show: true),
@@ -382,21 +387,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final idx = value.toInt();
-                          if (idx < 0 || idx >= sorted.length) return Container();
-                          // Zeige nur jedes 2. oder 3. Jahr, kleiner und gedreht
-                          if (idx % 3 != 0) return Container();
-                          return Transform.rotate(
-                            angle: -0.7,
-                            child: Text(
-                              sorted[idx].key,
-                              style: TextStyle(fontSize: 9),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          );
-                        },
+                        getTitlesWidget: (value, meta) => Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            value.toInt().toString(),
+                            maxLines: 1,
+                            overflow: TextOverflow.visible,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        reservedSize: 28,
                       ),
                     ),
                     topTitles: AxisTitles(
