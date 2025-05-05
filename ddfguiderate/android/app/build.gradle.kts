@@ -44,7 +44,7 @@ android {
     }
 
     signingConfigs {
-        create("release") {
+            create("release") {
             if (keystoreProperties.isNotEmpty()) {
                 storeFile = file(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
@@ -56,7 +56,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+                signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(

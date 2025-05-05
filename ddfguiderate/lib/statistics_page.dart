@@ -525,6 +525,29 @@ class _StatisticsPageState extends State<StatisticsPage> {
     final total = sorted.length;
     final listened = sorted.where((e) => e.listened).length;
 
+    // Maximal 100 Balken, jeder Balken steht für n Folgen
+    const maxBars = 100;
+    final bars = <Widget>[];
+    final groupSize = (total / maxBars).ceil().clamp(1, total);
+
+    for (int i = 0; i < total; i += groupSize) {
+      final group = sorted.sublist(i, (i + groupSize).clamp(0, total));
+      final listenedCount = group.where((e) => e.listened).length;
+      final color = listenedCount >= (group.length / 2) ? Colors.green : Colors.red;
+      bars.add(
+        Expanded(
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 0.5),
+            height: 18,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -532,35 +555,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
           '$title: $listened/$total (${total > 0 ? ((listened / total) * 100).toStringAsFixed(1) : '0'}%)',
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        SizedBox(
-          height: 32,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: sorted.length,
-            separatorBuilder: (_, __) => SizedBox(width: 2),
-            itemBuilder: (context, i) {
-              final e = sorted[i];
-              return Tooltip(
-                message: '${e.nummer} / ${e.titel}',
-                child: AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
-                  width: 8,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: e.listened ? Colors.green : Colors.red,
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: [
-                      if (e.listened)
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        )
-                    ],
-                  ),
-                ),
-              );
-            },
+        SizedBox(height: 8),
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: bars,
           ),
         ),
         SizedBox(height: 12),
