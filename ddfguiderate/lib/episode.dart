@@ -76,7 +76,7 @@ class Episode {
     if (nummer != null && nummer.toString().isNotEmpty && nummer != 'null') {
       id = 'spezial_${nummer}';
     } else if (json['titel'] != null && json['titel'].toString().trim().isNotEmpty) {
-      id = 'spezial_' + json['titel'].toString().replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+      id = generateSpezialId(json['titel']);
     } else {
       id = 'spezial_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
     }
@@ -229,4 +229,15 @@ class Episode {
     spotifyUrl: json['spotifyUrl'],
     links: (json['links'] as Map?)?.cast<String, String>(),
   );
+
+  static String generateSpezialId(String? title) {
+    if (title == null || title.trim().isEmpty) {
+      throw Exception('Spezialfolge ohne Titel!');
+    }
+    return 'spezial_' + title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+  }
 }

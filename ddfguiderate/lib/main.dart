@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'background_service.dart';
 import 'package:provider/provider.dart';
 import 'episode_state_provider.dart';
+import 'database_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,8 @@ void main() async {
     },
   );
   BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
+
+  await databaseService.removeNullSpezialStates();
 
   runApp(
     ChangeNotifierProvider(

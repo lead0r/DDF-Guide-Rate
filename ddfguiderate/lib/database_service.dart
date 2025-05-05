@@ -203,4 +203,13 @@ class DatabaseService {
   }
 
   // Export/Import folgt im nächsten Schritt
+
+  Future<void> removeNullSpezialStates() async {
+    final db = await db;
+    await db.delete(
+      'episode_state',
+      where: 'episode_id = ?',
+      whereArgs: ['spezial_null'],
+    );
+  }
 } 

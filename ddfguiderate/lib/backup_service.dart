@@ -83,6 +83,9 @@ class BackupService {
         final db = DatabaseService();
         await db.importAllFromJson(importData);
 
+        // Nach dem Import: Spezial-Null-States bereinigen
+        await db.removeNullSpezialStates();
+
         return 'Backup erfolgreich importiert';
       } catch (e) {
         return 'Fehler beim Parsen der Daten: $e';
