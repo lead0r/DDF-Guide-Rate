@@ -16,26 +16,6 @@ class EpisodeStateProvider extends ChangeNotifier {
     _loading = true;
     notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
-    final cachedMain = prefs.getString('mainEpisodes');
-    final cachedKids = prefs.getString('kidsEpisodes');
-    final cachedDr3i = prefs.getString('dr3iEpisodes');
-
-    List<Episode> main = [];
-    List<Episode> kids = [];
-    List<Episode> dr3i = [];
-
-    // 1. Zeige sofort gecachte Episoden, falls vorhanden
-    if (cachedMain != null && cachedKids != null && cachedDr3i != null) {
-      main = (jsonDecode(cachedMain) as List).map((e) => Episode.fromJson(e)).toList();
-      kids = (jsonDecode(cachedKids) as List).map((e) => Episode.fromJson(e)).toList();
-      dr3i = (jsonDecode(cachedDr3i) as List).map((e) => Episode.fromJson(e)).toList();
-      _episodes = [...main, ...kids, ...dr3i];
-      _loading = false;
-      notifyListeners();
-    }
-
-    // 2. Lade im Hintergrund die aktuellen Daten
     final dataService = EpisodeDataService();
     final results = await Future.wait([
       dataService.fetchAllMainEpisodes(),
@@ -43,15 +23,21 @@ class EpisodeStateProvider extends ChangeNotifier {
       dataService.fetchDr3iEpisodes(),
       DatabaseService().getAllStates(),
     ]);
-    main = results[0] as List<Episode>;
-    kids = results[1] as List<Episode>;
-    dr3i = results[2] as List<Episode>;
+    List<Episode> main = results[0] as List<Episode>;
+    List<Episode> kids = results[1] as List<Episode>;
+    List<Episode> dr3i = results[2] as List<Episode>;
     final dbStates = results[3] as List<Map<String, dynamic>>;
-    print('[DEBUG] Alle States aus DB: $dbStates');
+
+    // --- Orphaned States bereinigen, bevor States angewendet werden ---
+    final allEpisodeIds = [...main, ...kids, ...dr3i].map((e) => e.id).toList();
+    await DatabaseService().removeOrphanedStates(allEpisodeIds);
+
+    // Jetzt nochmal States laden, damit wirklich nur gültige States angewendet werden
+    final cleanedDbStates = await DatabaseService().getAllStates();
 
     void applyState(List<Episode> episodes) {
       for (var ep in episodes) {
-        final state = dbStates.firstWhere(
+        final state = cleanedDbStates.firstWhere(
           (s) => s['episode_id'] == ep.id,
           orElse: () => {},
         );
@@ -60,21 +46,13 @@ class EpisodeStateProvider extends ChangeNotifier {
           ep.rating = state['rating'] ?? 0;
           ep.note = state['note'] ?? '';
         }
-        print('[DEBUG] applyState: ${ep.id} listened=${ep.listened}');
       }
     }
     applyState(main);
     applyState(kids);
     applyState(dr3i);
 
-    // --- NEU: Orphaned States bereinigen ---
-    final allEpisodeIds = [...main, ...kids, ...dr3i].map((e) => e.id).toList();
-    await DatabaseService().removeOrphanedStates(allEpisodeIds);
-
-    await prefs.setString('mainEpisodes', jsonEncode(main.map((e) => e.toJson()).toList()));
-    await prefs.setString('kidsEpisodes', jsonEncode(kids.map((e) => e.toJson()).toList()));
-    await prefs.setString('dr3iEpisodes', jsonEncode(dr3i.map((e) => e.toJson()).toList()));
-
+    // Jetzt erst Episoden setzen und notifyListeners aufrufen!
     _episodes = [...main, ...kids, ...dr3i];
     _loading = false;
     notifyListeners();
