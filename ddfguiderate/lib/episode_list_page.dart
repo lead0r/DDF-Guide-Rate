@@ -578,8 +578,8 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
 
   Widget _buildList(List<Episode> episodes) {
     final filteredEpisodes = _filterAndSortMemoized(episodes);
-    final future = _filterAndSort(_futureEpisodes(episodes));
-    final past = _filterAndSort(_pastEpisodes(episodes));
+    final future = _filterAndSortMemoized(_futureEpisodes(episodes));
+    final past = _filterAndSortMemoized(_pastEpisodes(episodes));
     return ListView(
       children: [
         ExpansionTile(
