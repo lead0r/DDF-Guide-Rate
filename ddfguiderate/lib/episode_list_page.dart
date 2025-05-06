@@ -32,6 +32,11 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging || _tabController.index != _tabController.previousIndex) {
+        setState(() {});
+      }
+    });
     _searchController.addListener(() {
       setState(() {
         _search = _searchController.text;
@@ -550,5 +555,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 }  
