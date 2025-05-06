@@ -39,6 +39,17 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   bool? _cachedOnlyRated;
   List<Episode>? _cachedEpisodes;
   bool _snackbarShown = false;
+  final Map<int, List<Episode>> _tabFilteredCache = {};
+  int? _lastTabIndex;
+  String? _lastSearch;
+  String? _lastSortBy;
+  String? _lastSelectedAuthor;
+  String? _lastSelectedYear;
+  int? _lastSelectedRating;
+  String? _lastSelectedListened;
+  String? _lastSelectedType;
+  bool? _lastOnlyRated;
+  List<Episode>? _lastEpisodes;
 
   @override
   void initState() {
@@ -56,37 +67,37 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     });
   }
 
-  List<Episode> getEpisodesForTab(List<Episode> episodes) {
-    switch (_tabController.index) {
-      case 0:
-        return episodes.where((e) => e.serieTyp == 'Serie' || e.serieTyp == 'Spezial' || e.serieTyp == 'Kurzgeschichte').toList();
-      case 1:
-        return episodes.where((e) => e.serieTyp == 'Kids').toList();
-      case 2:
-        return episodes.where((e) => e.serieTyp == 'DR3i').toList();
-      default:
-        return [];
-    }
-  }
-
-  List<Episode> _filterAndSortMemoized(List<Episode> episodes) {
+  List<Episode> getFilteredEpisodesForCurrentTab(List<Episode> episodes) {
     // Prüfe, ob sich relevante Parameter geändert haben
-    if (_cachedFilteredEpisodes != null &&
-        _cachedTabIndex == _tabController.index &&
-        _cachedSearch == _search &&
-        _cachedSortBy == _sortBy &&
-        _cachedSelectedAuthor == _selectedAuthor &&
-        _cachedSelectedYear == _selectedYear &&
-        _cachedSelectedRating == _selectedRating &&
-        _cachedSelectedListened == _selectedListened &&
-        _cachedSelectedType == _selectedType &&
-        _cachedOnlyRated == _onlyRated &&
-        _cachedEpisodes == episodes) {
-      return _cachedFilteredEpisodes!;
+    if (_lastTabIndex == _tabController.index &&
+        _lastSearch == _search &&
+        _lastSortBy == _sortBy &&
+        _lastSelectedAuthor == _selectedAuthor &&
+        _lastSelectedYear == _selectedYear &&
+        _lastSelectedRating == _selectedRating &&
+        _lastSelectedListened == _selectedListened &&
+        _lastSelectedType == _selectedType &&
+        _lastOnlyRated == _onlyRated &&
+        _lastEpisodes == episodes &&
+        _tabFilteredCache.containsKey(_tabController.index)) {
+      return _tabFilteredCache[_tabController.index]!;
     }
 
     // Filtere nach Tab
-    List<Episode> filtered = getEpisodesForTab(episodes);
+    List<Episode> filtered;
+    switch (_tabController.index) {
+      case 0:
+        filtered = episodes.where((e) => e.serieTyp == 'Serie' || e.serieTyp == 'Spezial' || e.serieTyp == 'Kurzgeschichte').toList();
+        break;
+      case 1:
+        filtered = episodes.where((e) => e.serieTyp == 'Kids').toList();
+        break;
+      case 2:
+        filtered = episodes.where((e) => e.serieTyp == 'DR3i').toList();
+        break;
+      default:
+        filtered = [];
+    }
 
     // Filtere nach Suchtext und weiteren Filtern
     filtered = filtered.where((ep) =>
@@ -129,17 +140,17 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     }
 
     // Cache aktualisieren
-    _cachedFilteredEpisodes = filtered;
-    _cachedTabIndex = _tabController.index;
-    _cachedSearch = _search;
-    _cachedSortBy = _sortBy;
-    _cachedSelectedAuthor = _selectedAuthor;
-    _cachedSelectedYear = _selectedYear;
-    _cachedSelectedRating = _selectedRating;
-    _cachedSelectedListened = _selectedListened;
-    _cachedSelectedType = _selectedType;
-    _cachedOnlyRated = _onlyRated;
-    _cachedEpisodes = episodes;
+    _tabFilteredCache[_tabController.index] = filtered;
+    _lastTabIndex = _tabController.index;
+    _lastSearch = _search;
+    _lastSortBy = _sortBy;
+    _lastSelectedAuthor = _selectedAuthor;
+    _lastSelectedYear = _selectedYear;
+    _lastSelectedRating = _selectedRating;
+    _lastSelectedListened = _selectedListened;
+    _lastSelectedType = _selectedType;
+    _lastOnlyRated = _onlyRated;
+    _lastEpisodes = episodes;
 
     return filtered;
   }
@@ -152,7 +163,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   Future<void> _showFilterDialog() async {
     final episodeProvider = Provider.of<EpisodeStateProvider>(context, listen: false);
     final episodes = episodeProvider.episodes;
-    List<Episode> currentEpisodes = getEpisodesForTab(episodes);
+    List<Episode> currentEpisodes = getFilteredEpisodesForCurrentTab(episodes);
     if (currentEpisodes.isEmpty) {
       await showDialog(
         context: context,
@@ -565,9 +576,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                 : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildList(getEpisodesForTab(episodes)),
-                      _buildList(getEpisodesForTab(episodes)),
-                      _buildList(getEpisodesForTab(episodes)),
+                      _buildList(getFilteredEpisodesForCurrentTab(episodes)),
+                      _buildList(getFilteredEpisodesForCurrentTab(episodes)),
+                      _buildList(getFilteredEpisodesForCurrentTab(episodes)),
                     ],
                   ),
           ),
@@ -577,9 +588,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   }
 
   Widget _buildList(List<Episode> episodes) {
-    final filteredEpisodes = _filterAndSortMemoized(episodes);
-    final future = _filterAndSortMemoized(_futureEpisodes(episodes));
-    final past = _filterAndSortMemoized(_pastEpisodes(episodes));
+    final filteredEpisodes = getFilteredEpisodesForCurrentTab(episodes);
+    final future = filteredEpisodes.where((ep) => ep.isFutureRelease).toList();
+    final past = filteredEpisodes.where((ep) => !ep.isFutureRelease).toList();
     return ListView(
       children: [
         ExpansionTile(

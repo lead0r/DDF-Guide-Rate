@@ -103,7 +103,6 @@ class DatabaseService {
   }
 
   Future<void> updateEpisodeState(String episodeId, {String? note, int? rating, bool? listened}) async {
-    print('[DEBUG] updateEpisodeState: $episodeId, note=$note, rating=$rating, listened=$listened');
     final dbClient = await db;
     // Hole bisherigen State (falls vorhanden)
     final prev = await getEpisodeState(episodeId);
@@ -115,7 +114,6 @@ class DatabaseService {
           ? (listened ? 1 : 0)
           : prev?['listened'] ?? 0,
     };
-    print('[DEBUG] updateMap: $updateMap');
     // Upsert: Insert mit ConflictAlgorithm.replace
     await dbClient.insert(
       'episode_state',
@@ -123,9 +121,6 @@ class DatabaseService {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     await _logHistory(episodeId);
-    print('[DEBUG] updateEpisodeState: Nach Insert/Update');
-    final all = await getAllStates();
-    print('[DEBUG] getAllStates (nach Update): $all');
   }
 
   Future<void> _logHistory(String episodeId) async {
@@ -155,7 +150,6 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getAllStates() async {
     final dbClient = await db;
     final result = await dbClient.query('episode_state');
-    print('[DEBUG] getAllStates: ${result.map((e) => '${e['episode_id']}: listened=${e['listened']}, rating=${e['rating']}, note=${e['note']}').toList()}');
     return result;
   }
 

@@ -52,7 +52,6 @@ class Episode {
     } else {
       id = 'serie_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
     }
-    print('[DEBUG] Erzeuge Episode: $id');
     return Episode(
       id: id,
       nummer: nummer ?? 0,
@@ -80,7 +79,6 @@ class Episode {
     } else {
       id = 'spezial_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
     }
-    print('[DEBUG] Erzeuge Spezial-Episode: $id');
     return Episode(
       id: id,
       nummer: nummer ?? 0,
@@ -108,7 +106,6 @@ class Episode {
     } else {
       id = 'kurz_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
     }
-    print('[DEBUG] Erzeuge Kurzgeschichte: $id');
     return Episode(
       id: id,
       nummer: nummer ?? 0,
@@ -136,7 +133,6 @@ class Episode {
     } else {
       id = 'kids_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
     }
-    print('[DEBUG] Erzeuge Kids-Episode: $id');
     return Episode(
       id: id,
       nummer: nummer ?? 0,
@@ -164,7 +160,6 @@ class Episode {
     } else {
       id = 'dr3i_unbekannt_${DateTime.now().millisecondsSinceEpoch}';
     }
-    print('[DEBUG] Erzeuge DR3i-Episode: $id');
     return Episode(
       id: id,
       nummer: nummer ?? 0,
