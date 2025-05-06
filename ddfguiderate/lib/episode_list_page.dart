@@ -38,6 +38,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   String? _cachedSelectedType;
   bool? _cachedOnlyRated;
   List<Episode>? _cachedEpisodes;
+  bool _snackbarShown = false;
 
   @override
   void initState() {
@@ -407,6 +408,37 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     final episodeProvider = Provider.of<EpisodeStateProvider>(context);
     final episodes = episodeProvider.episodes;
     final loading = episodeProvider.loading;
+    final error = episodeProvider.error;
+    final backgroundUpdateFailed = episodeProvider.backgroundUpdateFailed;
+
+    // Fehler-Snackbar anzeigen, wenn error != null und noch nicht gezeigt
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (error != null && !_snackbarShown && ScaffoldMessenger.of(context).mounted) {
+        _snackbarShown = true;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error,
+              style: TextStyle(color: Colors.red),
+            ),
+            backgroundColor: Colors.red[50],
+            action: SnackBarAction(
+              label: 'Erneut versuchen',
+              textColor: Colors.red,
+              onPressed: () {
+                episodeProvider.loadEpisodes();
+              },
+            ),
+            duration: Duration(seconds: 6),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      if (error == null && _snackbarShown) {
+        _snackbarShown = false;
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -414,6 +446,14 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Text('???'),
+            if (backgroundUpdateFailed)
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Tooltip(
+                  message: 'Letztes Hintergrund-Update fehlgeschlagen',
+                  child: Icon(Icons.warning, color: Colors.orange, size: 22),
+                ),
+              ),
           ],
         ),
         actions: [
@@ -493,6 +533,32 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
               ),
             ),
           ),
+          // Das Fehler-Banner nur anzeigen, wenn die Snackbar nicht gezeigt wird
+          if (error != null && !_snackbarShown)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: MaterialBanner(
+                content: Text(
+                  error,
+                  style: TextStyle(color: Colors.red),
+                ),
+                backgroundColor: Colors.red[50],
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      episodeProvider.loadEpisodes();
+                    },
+                    child: Text('Erneut versuchen'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      episodeProvider.clearError();
+                    },
+                    child: Text('Schließen'),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: loading
                 ? Center(child: CircularProgressIndicator())

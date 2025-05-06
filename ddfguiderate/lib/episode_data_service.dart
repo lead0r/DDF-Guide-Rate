@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'episode.dart';
+import 'episode_cache_service.dart';
 
 class EpisodeDataService {
   static const Map<String, String> urls = {
@@ -11,12 +12,46 @@ class EpisodeDataService {
     'DR3i': 'https://dreimetadaten.de/data/DiE_DR3i.json',
   };
 
-  Future<List<Episode>> fetchEpisodes({required String type}) async {
+  Future<List<Episode>> fetchEpisodes({required String type, bool forceNetwork = false}) async {
+    // 1. Erst aus Cache laden (sofortige Anzeige), außer forceNetwork=true
+    if (!forceNetwork) {
+      final cachedData = await EpisodeCacheService.loadEpisodesFromCache(type);
+      if (cachedData != null) {
+        try {
+          return _parseEpisodes(type, cachedData);
+        } catch (e) {
+          print('[ERROR] Fehler beim Parsen des Caches für $type: $e');
+        }
+      }
+    }
+
+    // 2. Dann aus dem Netz laden (und Cache aktualisieren)
     final url = urls[type];
     if (url == null) return [];
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode != 200) return [];
-    final data = json.decode(utf8.decode(response.bodyBytes));
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) throw Exception('HTTP ${response.statusCode}');
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      await EpisodeCacheService.saveEpisodesToCache(type, data);
+      return _parseEpisodes(type, data);
+    } catch (e) {
+      print('[ERROR] Fehler beim Laden aus dem Netz für $type: $e');
+      // Fallback: Versuche Cache zu laden
+      final cachedData = await EpisodeCacheService.loadEpisodesFromCache(type);
+      if (cachedData != null) {
+        try {
+          return _parseEpisodes(type, cachedData);
+        } catch (e) {
+          print('[ERROR] Fehler beim Parsen des Caches (Fallback) für $type: $e');
+        }
+      }
+      // Wenn alles fehlschlägt, gib leere Liste zurück
+      return [];
+    }
+  }
+
+  // Extrahiere die Parsing-Logik in eine eigene Methode
+  List<Episode> _parseEpisodes(String type, dynamic data) {
     List episodesJson = [];
     if (type == 'DR3i') {
       episodesJson = data['die_dr3i'] ?? [];
