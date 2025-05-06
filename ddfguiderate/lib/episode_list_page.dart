@@ -27,6 +27,17 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   String _selectedListened = '';
   String _selectedType = '';
   bool _onlyRated = false;
+  List<Episode>? _cachedFilteredEpisodes;
+  int? _cachedTabIndex;
+  String? _cachedSearch;
+  String? _cachedSortBy;
+  String? _cachedSelectedAuthor;
+  String? _cachedSelectedYear;
+  int? _cachedSelectedRating;
+  String? _cachedSelectedListened;
+  String? _cachedSelectedType;
+  bool? _cachedOnlyRated;
+  List<Episode>? _cachedEpisodes;
 
   @override
   void initState() {
@@ -57,8 +68,27 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     }
   }
 
-  List<Episode> _filterAndSort(List<Episode> episodes) {
-    List<Episode> filtered = episodes.where((ep) =>
+  List<Episode> _filterAndSortMemoized(List<Episode> episodes) {
+    // Prüfe, ob sich relevante Parameter geändert haben
+    if (_cachedFilteredEpisodes != null &&
+        _cachedTabIndex == _tabController.index &&
+        _cachedSearch == _search &&
+        _cachedSortBy == _sortBy &&
+        _cachedSelectedAuthor == _selectedAuthor &&
+        _cachedSelectedYear == _selectedYear &&
+        _cachedSelectedRating == _selectedRating &&
+        _cachedSelectedListened == _selectedListened &&
+        _cachedSelectedType == _selectedType &&
+        _cachedOnlyRated == _onlyRated &&
+        _cachedEpisodes == episodes) {
+      return _cachedFilteredEpisodes!;
+    }
+
+    // Filtere nach Tab
+    List<Episode> filtered = getEpisodesForTab(episodes);
+
+    // Filtere nach Suchtext und weiteren Filtern
+    filtered = filtered.where((ep) =>
       (_search.isEmpty ||
         ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
         ep.nummer.toString().contains(_search) ||
@@ -74,6 +104,8 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       ) &&
       (!_onlyRated || ep.rating > 0)
     ).toList();
+
+    // Sortierung
     switch (_sortBy) {
       case 'date':
         filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
@@ -94,6 +126,20 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         filtered.sort((a, b) => b.nummer.compareTo(a.nummer));
         break;
     }
+
+    // Cache aktualisieren
+    _cachedFilteredEpisodes = filtered;
+    _cachedTabIndex = _tabController.index;
+    _cachedSearch = _search;
+    _cachedSortBy = _sortBy;
+    _cachedSelectedAuthor = _selectedAuthor;
+    _cachedSelectedYear = _selectedYear;
+    _cachedSelectedRating = _selectedRating;
+    _cachedSelectedListened = _selectedListened;
+    _cachedSelectedType = _selectedType;
+    _cachedOnlyRated = _onlyRated;
+    _cachedEpisodes = episodes;
+
     return filtered;
   }
 
@@ -465,6 +511,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   }
 
   Widget _buildList(List<Episode> episodes) {
+    final filteredEpisodes = _filterAndSortMemoized(episodes);
     final future = _filterAndSort(_futureEpisodes(episodes));
     final past = _filterAndSort(_pastEpisodes(episodes));
     return ListView(
