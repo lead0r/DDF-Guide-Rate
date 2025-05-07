@@ -74,7 +74,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     for (var entry in history) {
       final ts = entry['timestamp'];
       if (ts != null) {
-        final date = DateTime.fromMillisecondsSinceEpoch(ts);
+        final date = DateTime.fromMillisecondsSinceEpoch(ts is int ? ts : int.parse(ts.toString()));
         final ym = "${date.year}-${date.month.toString().padLeft(2, '0')}";
         listenedPerMonth[ym] = (listenedPerMonth[ym] ?? 0) + 1;
       }
