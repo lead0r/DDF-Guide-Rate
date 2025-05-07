@@ -4,8 +4,7 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id("dev.flutter.flutter-gradle-plugin")
+    id("dev.flutter.flutter-gradle-plugin") version "1.0.0"
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -21,7 +20,7 @@ dependencies {
 
 android {
     namespace = "com.nevial.ddfguiderate"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -35,16 +34,15 @@ android {
     }
 
     defaultConfig {
-        // Anwendungspaket-ID: bitte anpassen!
         applicationId = "com.nevial.ddfguiderate"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
     }
 
     signingConfigs {
-            create("release") {
+        create("release") {
             if (keystoreProperties.isNotEmpty()) {
                 storeFile = file(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
@@ -56,7 +54,7 @@ android {
 
     buildTypes {
         release {
-                signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
