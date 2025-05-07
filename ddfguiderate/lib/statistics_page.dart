@@ -150,11 +150,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
         padding: EdgeInsets.all(16),
         child: RepaintBoundary(
           key: _sharePicKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildOverviewSection(),
-              SizedBox(height: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildOverviewSection(),
+            SizedBox(height: 24),
               // Fortschritt pro Serie (rot/grüne Balken) in gewünschter Reihenfolge
               _buildProgressTimeline(mainEpisodes, '???'),
               _buildProgressTimeline(spezialEpisodes, 'Spezial'),
@@ -163,16 +163,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
               _buildProgressTimeline(dr3iEpisodes, 'DR3i'),
               SizedBox(height: 24),
               _buildRatingDistributionSection(),
-              SizedBox(height: 24),
-              _buildTop10Section(),
-              SizedBox(height: 24),
+            SizedBox(height: 24),
+            _buildTop10Section(),
+            SizedBox(height: 24),
               _buildProgressChartSection(),
-              SizedBox(height: 24),
+            SizedBox(height: 24),
               _buildYearBarChartSection(), // Veröffentlichungen pro Jahr
-              SizedBox(height: 24),
+            SizedBox(height: 24),
               _buildAuthorBarChartSection(),
-              SizedBox(height: 80),
-            ],
+            SizedBox(height: 80),
+          ],
           ),
         ),
       ),
@@ -296,12 +296,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           ));
                         },
                         child: CachedNetworkImage(
-                          imageUrl: ep.coverUrl!,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => CircularProgressIndicator(),
-                          errorWidget: (context, url, error) => Icon(Icons.broken_image),
+                        imageUrl: ep.coverUrl!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => CircularProgressIndicator(),
+                        errorWidget: (context, url, error) => Icon(Icons.broken_image),
                         ),
                       )
                     : Icon(Icons.album),
@@ -346,26 +346,26 @@ class _StatisticsPageState extends State<StatisticsPage> {
         SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
-          child: SizedBox(
+            child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.85,
-            height: 220,
-            child: BarChart(
-              BarChartData(
-                barGroups: [
-                  for (int i = 0; i < top.length; i++)
-                    BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: top[i].value.toDouble(),
-                          color: Colors.blue,
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  barGroups: [
+                    for (int i = 0; i < top.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: top[i].value.toDouble(),
+                            color: Colors.blue,
                           width: 18,
                           borderRadius: BorderRadius.circular(4),
                           rodStackItems: [],
-                        ),
-                      ],
-                    ),
-                ],
+                          ),
+                        ],
+                      ),
+                  ],
                 barTouchData: BarTouchData(
                   enabled: true,
                   touchCallback: (event, response) {
@@ -377,8 +377,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     }
                   },
                 ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) => Padding(
@@ -391,40 +391,40 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         ),
                       ),
                     ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
                       reservedSize: 64,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx < 0 || idx >= top.length) return Container();
-                        if (idx % 2 != 0) return Container();
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= top.length) return Container();
+                          if (idx % 2 != 0) return Container();
                         return Padding(
                           padding: const EdgeInsets.only(top: 24),
                           child: GestureDetector(
                             onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
                             child: Transform.rotate(
                               angle: -0.7,
-                              child: Tooltip(
-                                message: top[idx].key,
-                                child: Text(
-                                  top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                            child: Tooltip(
+                              message: top[idx].key,
+                              child: Text(
+                                top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
                                   style: TextStyle(
                                     fontSize: 9,
                                     decoration: TextDecoration.underline,
                                     color: Colors.blue,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                                 ),
                               ),
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
                   topTitles: AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
@@ -453,25 +453,25 @@ class _StatisticsPageState extends State<StatisticsPage> {
         SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
-          child: SizedBox(
+            child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.85,
-            height: 220,
-            child: BarChart(
-              BarChartData(
-                barGroups: [
-                  for (int i = 0; i < sorted.length; i++)
-                    BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: sorted[i].value.toDouble(),
-                          color: Colors.green,
-                        ),
-                      ],
-                    ),
-                ],
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  barGroups: [
+                    for (int i = 0; i < sorted.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: sorted[i].value.toDouble(),
+                            color: Colors.green,
+                          ),
+                        ],
+                      ),
+                  ],
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) => Padding(
@@ -484,22 +484,22 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         ),
                       ),
                     ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
                         // Zeige nur jede 5. Jahreszahl an
                         if (idx % 5 != 0) return Container();
-                        if (idx < 0 || idx >= sorted.length) return Container();
+                          if (idx < 0 || idx >= sorted.length) return Container();
                         return Text(
-                          sorted[idx].key,
+                              sorted[idx].key,
                           style: TextStyle(fontSize: 10),
-                          maxLines: 1,
+                              maxLines: 1,
                           overflow: TextOverflow.visible,
-                        );
-                      },
+                          );
+                        },
                       reservedSize: 28,
                     ),
                   ),
@@ -508,10 +508,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   ),
                   rightTitles: AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
-                ),
-                gridData: FlGridData(show: true),
-                borderData: FlBorderData(show: true),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
               ),
             ),
           ),
@@ -713,7 +713,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text('Schließen'),
           ),
-        ],
+      ],
       ),
     );
   }

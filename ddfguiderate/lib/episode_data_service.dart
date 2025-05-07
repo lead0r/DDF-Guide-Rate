@@ -8,30 +8,30 @@ import 'episode_cache_service.dart';
 List<Episode> parseEpisodesIsolate(Map<String, dynamic> args) {
   final String type = args['type'];
   final dynamic data = args['data'];
-  List episodesJson = [];
-  if (type == 'DR3i') {
-    episodesJson = data['die_dr3i'] ?? [];
-  } else if (type == 'Kids') {
-    episodesJson = data['kids'] ?? [];
-  } else {
-    episodesJson = data['serie'] ?? data['spezial'] ?? data['kurzgeschichten'] ?? [];
-  }
-  return episodesJson.map<Episode>((json) {
-    switch (type) {
-      case 'Serie':
-        return Episode.fromSerieJson(json);
-      case 'Spezial':
-        return Episode.fromSpezialJson(json);
-      case 'Kurzgeschichte':
-        return Episode.fromKurzgeschichteJson(json);
-      case 'Kids':
-        return Episode.fromKidsJson(json);
-      case 'DR3i':
-        return Episode.fromDr3iJson(json);
-      default:
-        throw Exception('Unbekannter Episodentyp: $type');
+    List episodesJson = [];
+    if (type == 'DR3i') {
+      episodesJson = data['die_dr3i'] ?? [];
+    } else if (type == 'Kids') {
+      episodesJson = data['kids'] ?? [];
+    } else {
+      episodesJson = data['serie'] ?? data['spezial'] ?? data['kurzgeschichten'] ?? [];
     }
-  }).toList();
+    return episodesJson.map<Episode>((json) {
+      switch (type) {
+        case 'Serie':
+          return Episode.fromSerieJson(json);
+        case 'Spezial':
+          return Episode.fromSpezialJson(json);
+        case 'Kurzgeschichte':
+          return Episode.fromKurzgeschichteJson(json);
+        case 'Kids':
+          return Episode.fromKidsJson(json);
+        case 'DR3i':
+          return Episode.fromDr3iJson(json);
+        default:
+          throw Exception('Unbekannter Episodentyp: $type');
+      }
+    }).toList();
 }
 
 class EpisodeDataService {

@@ -57,7 +57,19 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging || _tabController.index != _tabController.previousIndex) {
-        setState(() {});
+        setState(() {
+          _tabFilteredCache.clear();
+          _lastTabIndex = null;
+          _lastSearch = null;
+          _lastSortBy = null;
+          _lastSelectedAuthor = null;
+          _lastSelectedYear = null;
+          _lastSelectedRating = null;
+          _lastSelectedListened = null;
+          _lastSelectedType = null;
+          _lastOnlyRated = null;
+          _lastEpisodes = null;
+        });
       }
     });
     _searchController.addListener(() {
@@ -83,7 +95,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       return _tabFilteredCache[_tabController.index]!;
     }
 
-    // Filtere nach Tab
+    // Filtere nach Tab - Optimierte Version
     List<Episode> filtered;
     switch (_tabController.index) {
       case 0:
@@ -99,25 +111,60 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         filtered = [];
     }
 
-    // Filtere nach Suchtext und weiteren Filtern
-    filtered = filtered.where((ep) =>
-      (_search.isEmpty ||
-        ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
-        ep.nummer.toString().contains(_search) ||
-        (ep.autor.toLowerCase().contains(_search.toLowerCase()))) &&
-      (_selectedAuthor == '' || ep.autor == _selectedAuthor) &&
-      (_selectedYear == '' || (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.startsWith(_selectedYear))) &&
-      (_selectedRating == -1 || ep.rating == _selectedRating) &&
-      (_selectedListened == '' || (_selectedListened == 'true' ? ep.listened : !ep.listened)) &&
-      (
-        _selectedType == '' ||
-        (_selectedType == 'Spezial' && ep.serieTyp == 'Spezial') ||
-        (_selectedType == 'Kurzgeschichte' && ep.serieTyp == 'Kurzgeschichte')
-      ) &&
-      (!_onlyRated || ep.rating > 0)
-    ).toList();
+    // Optimierte Filterung: Kombiniere alle Filter in einer Schleife
+    if (_search.isNotEmpty || _selectedAuthor.isNotEmpty || _selectedYear.isNotEmpty || 
+        _selectedRating != -1 || _selectedListened.isNotEmpty || _selectedType.isNotEmpty || _onlyRated) {
+      filtered = filtered.where((ep) {
+        bool matches = true;
+        
+        // Suchtext
+        if (_search.isNotEmpty) {
+          matches = matches && (
+            ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
+            ep.nummer.toString().contains(_search) ||
+            ep.autor.toLowerCase().contains(_search.toLowerCase())
+          );
+        }
+        
+        // Autor
+        if (_selectedAuthor.isNotEmpty) {
+          matches = matches && ep.autor == _selectedAuthor;
+        }
+        
+        // Jahr
+        if (_selectedYear.isNotEmpty) {
+          matches = matches && (ep.veroeffentlichungsdatum != null && 
+            ep.veroeffentlichungsdatum!.startsWith(_selectedYear));
+        }
+        
+        // Bewertung
+        if (_selectedRating != -1) {
+          matches = matches && ep.rating == _selectedRating;
+        }
+        
+        // Gehört-Status
+        if (_selectedListened.isNotEmpty) {
+          matches = matches && (_selectedListened == 'true' ? ep.listened : !ep.listened);
+        }
+        
+        // Typ
+        if (_selectedType.isNotEmpty) {
+          matches = matches && (
+            (_selectedType == 'Spezial' && ep.serieTyp == 'Spezial') ||
+            (_selectedType == 'Kurzgeschichte' && ep.serieTyp == 'Kurzgeschichte')
+          );
+        }
+        
+        // Nur bewertete
+        if (_onlyRated) {
+          matches = matches && ep.rating > 0;
+        }
+        
+        return matches;
+      }).toList();
+    }
 
-    // Sortierung
+    // Optimierte Sortierung
     switch (_sortBy) {
       case 'date':
         filtered.sort((a, b) => (b.veroeffentlichungsdatum ?? '').compareTo(a.veroeffentlichungsdatum ?? ''));
