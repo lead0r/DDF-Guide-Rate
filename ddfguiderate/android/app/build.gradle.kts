@@ -3,7 +3,8 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
+    // Flutter-Gradle-Plugin
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -34,7 +35,6 @@ android {
     }
 
     defaultConfig {
-        // Anwendungspaket-ID: bitte anpassen!
         applicationId = "com.nevial.ddfguiderate"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion

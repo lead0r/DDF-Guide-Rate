@@ -16,12 +16,9 @@ allprojects {
         google()
         mavenCentral()
         
-        // Verwenden Sie eine Hardcoded URL anstelle der Projektreferenz
-        // Dies vermeidet den Zugriff auf 'android' vor der Definition
+        // Korrekter Pfad zum background_fetch Plugin basierend auf Ihrer Abhängigkeitsstruktur
         maven {
-            url = uri("${rootDir}/../.pub-cache/hosted/pub.dartlang.org/background_fetch-0.7.3/android/libs")
-            // Alternativ einen absoluten Pfad verwenden
-            // url = uri("/Users/nevial/StudioProjects/DDF-Guide-Rate/ddfguiderate/.pub-cache/hosted/pub.dartlang.org/background_fetch-0.7.3/android/libs")
+            url = uri("${rootDir}/../.pub-cache/hosted/pub.dartlang.org/background_fetch-1.3.8/android/libs")
         }
     }
 }
