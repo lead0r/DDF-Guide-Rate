@@ -51,6 +51,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   String? _lastSelectedType;
   bool? _lastOnlyRated;
   List<Episode>? _lastEpisodes;
+  String? _cachedSelectedRole;
 
   @override
   void initState() {
@@ -265,6 +266,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     String listenedValue = _selectedListened;
     String typeValue = _selectedType;
     bool onlyRatedValue = _onlyRated;
+    String roleValue = _selectedRole;
 
     // Wert auf gültigen Wert mappen
     if (!sortedAuthors.contains(authorValue)) authorValue = '';
@@ -297,6 +299,28 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       DropdownMenuItem(value: 'true', child: Text('Gehört')),
       DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
     ];
+
+    // --- Alle Sprechrollen extrahieren (außer Hauptrollen) ---
+    final Set<String> allRoles = {};
+    for (final ep in episodes) {
+      if (ep.sprechrollen != null) {
+        for (final s in ep.sprechrollen!) {
+          final rolle = (s['rolle'] ?? '').toString();
+          if (rolle.isNotEmpty &&
+              rolle != 'Justus Jonas, Erster Detektiv' &&
+              rolle != 'Peter Shaw, zweiter Detektiv' &&
+              rolle != 'Bob Andrews, Recherchen und Archiv') {
+            allRoles.add(rolle);
+          }
+        }
+      }
+    }
+    final sortedRoles = allRoles.toList()..sort();
+
+    final roleItems = sortedRoles.isEmpty
+      ? [DropdownMenuItem(value: '', child: Text('Keine Rollen'))]
+      : [DropdownMenuItem(value: '', child: Text('Alle Rollen'))] +
+        sortedRoles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList();
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -342,6 +366,13 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   decoration: InputDecoration(labelText: 'Folgentyp'),
                 ),
                 SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: roleItems.any((item) => item.value == roleValue) ? roleValue : roleItems.first.value,
+                  items: roleItems,
+                  onChanged: (v) => setState(() => roleValue = v ?? ''),
+                  decoration: InputDecoration(labelText: 'Rolle'),
+                ),
+                SizedBox(height: 8),
                 CheckboxListTile(
                   value: onlyRatedValue,
                   onChanged: (v) => setState(() => onlyRatedValue = v ?? false),
@@ -362,6 +393,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   'listened': '',
                   'type': '',
                   'onlyRated': false,
+                  'role': '',
                 });
               },
               child: Text('Zurücksetzen'),
@@ -375,6 +407,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                   'listened': listenedValue,
                   'type': typeValue,
                   'onlyRated': onlyRatedValue,
+                  'role': roleValue,
                 });
               },
               child: Text('Anwenden'),
@@ -399,6 +432,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         _selectedListened = result['listened'];
         _selectedType = result['type'] ?? '';
         _onlyRated = result['onlyRated'] ?? false;
+        _selectedRole = result['role'] ?? '';
       });
     }
   }
@@ -566,47 +600,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             icon: Icon(Icons.filter_alt),
             tooltip: 'Filter',
             onPressed: _showFilterDialog,
-          ),
-          IconButton(
-            icon: Icon(Icons.record_voice_over),
-            tooltip: 'Rolle filtern',
-            onPressed: () async {
-              final selected = await showDialog<String>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('Rolle auswählen'),
-                  content: SizedBox(
-                    width: double.maxFinite,
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: [
-                        ListTile(
-                          title: Text('Keine Filterung'),
-                          onTap: () => Navigator.pop(context, ''),
-                          selected: _selectedRole.isEmpty,
-                        ),
-                        ...sortedRoles.map((rolle) => ListTile(
-                          title: Text(rolle),
-                          onTap: () => Navigator.pop(context, rolle),
-                          selected: _selectedRole == rolle,
-                        )),
-                      ],
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, null),
-                      child: Text('Abbrechen'),
-                    ),
-                  ],
-                ),
-              );
-              if (selected != null) {
-                setState(() {
-                  _selectedRole = selected;
-                });
-              }
-            },
           ),
           IconButton(
             icon: Icon(Icons.settings),
