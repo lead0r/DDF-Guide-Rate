@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'main.dart';
+import 'episode.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'episode_state_provider.dart';
-import 'episode.dart';
 import 'episode_detail_page.dart';
-import 'main.dart';
-import 'database_service.dart';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:flutter/rendering.dart';
+import 'database_service.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -33,22 +33,26 @@ class _StatisticsPageState extends State<StatisticsPage> {
     final episodeProvider = Provider.of<EpisodeStateProvider>(context, listen: false);
     final episodes = episodeProvider.episodes;
 
+    // Allgemeine Statistiken
     int totalEpisodes = episodes.length;
     int listenedEpisodes = episodes.where((ep) => ep.listened).length;
     double listenedPercentage = totalEpisodes > 0
         ? (listenedEpisodes / totalEpisodes * 100)
         : 0.0;
 
+    // Bewertungsstatistiken
     final ratedEpisodes = episodes.where((ep) => ep.rating > 0).toList();
     double averageRating = ratedEpisodes.isNotEmpty
         ? ratedEpisodes.fold<int>(0, (sum, ep) => sum + ep.rating) / ratedEpisodes.length
         : 0.0;
 
+    // Nach Autor
     Map<String, int> authorCounts = {};
     for (var ep in episodes) {
       authorCounts[ep.autor] = (authorCounts[ep.autor] ?? 0) + 1;
     }
 
+    // Nach Jahr
     Map<String, int> yearCounts = {};
     for (var ep in episodes) {
       final year = (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.length >= 4)
@@ -57,11 +61,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
       yearCounts[year] = (yearCounts[year] ?? 0) + 1;
     }
 
+    // Bewertungsverteilung
     Map<int, int> ratingDistribution = {};
     for (int i = 0; i <= 5; i++) {
       ratingDistribution[i] = episodes.where((ep) => ep.rating == i).length;
     }
 
+    // Fortschritt über Zeit (tatsächliches "gehört am"-Datum, gruppiert nach Monat)
     Map<String, int> listenedPerMonth = {};
     final db = await DatabaseService().db;
     final history = await db.query('episode_state_history', where: 'listened = 1');
@@ -74,6 +80,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
       }
     }
 
+    // Top 10 Lieblingsepisoden
     List<Episode> top10 = List<Episode>.from(ratedEpisodes)
       ..sort((a, b) => b.rating.compareTo(a.rating));
     if (top10.length > 10) top10 = top10.sublist(0, 10);
@@ -117,6 +124,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     final episodeProvider = Provider.of<EpisodeStateProvider>(context);
     final episodes = episodeProvider.episodes;
 
+    // Gruppiere die Episoden nach Typ
     final mainEpisodes = episodes.where((e) => e.serieTyp == 'Serie').toList();
     final spezialEpisodes = episodes.where((e) => e.serieTyp == 'Spezial').toList();
     final kurzEpisodes = episodes.where((e) => e.serieTyp == 'Kurzgeschichte').toList();
@@ -146,11 +154,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
         padding: EdgeInsets.all(16),
         child: RepaintBoundary(
           key: _sharePicKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildOverviewSection(),
-              SizedBox(height: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildOverviewSection(),
+            SizedBox(height: 24),
+              // Fortschritt pro Serie (rot/grüne Balken) in gewünschter Reihenfolge
               _buildProgressTimeline(mainEpisodes, '???'),
               _buildProgressTimeline(spezialEpisodes, 'Spezial'),
               _buildProgressTimeline(kurzEpisodes, 'Kurzgeschichten'),
@@ -158,16 +167,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
               _buildProgressTimeline(dr3iEpisodes, 'DR3i'),
               SizedBox(height: 24),
               _buildRatingDistributionSection(),
-              SizedBox(height: 24),
-              _buildTop10Section(),
-              SizedBox(height: 24),
+            SizedBox(height: 24),
+            _buildTop10Section(),
+            SizedBox(height: 24),
               _buildProgressChartSection(),
-              SizedBox(height: 24),
-              _buildYearBarChartSection(),
-              SizedBox(height: 24),
+            SizedBox(height: 24),
+              _buildYearBarChartSection(), // Veröffentlichungen pro Jahr
+            SizedBox(height: 24),
               _buildAuthorBarChartSection(),
-              SizedBox(height: 80),
-            ],
+            SizedBox(height: 80),
+          ],
           ),
         ),
       ),
@@ -178,7 +187,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Überblick', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Überblick',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         SizedBox(height: 16),
         Card(
           child: Padding(
@@ -205,7 +217,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label),
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
@@ -213,6 +228,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget _buildProgressChartSection() {
     final Map<String, int> listenedPerMonth = Map<String, int>.from(statistics['listenedPerMonth'] as Map? ?? {});
     final sortedKeys = listenedPerMonth.keys.toList()..sort();
+    // Kumulativ berechnen
     int sum = 0;
     final List<FlSpot> spots = [];
     for (int i = 0; i < sortedKeys.length; i++) {
@@ -241,15 +257,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     ),
                   ],
                   titlesData: FlTitlesData(
-                    leftTitles: SideTitles(showTitles: true, getTitles: (value) => value.toInt().toString()),
-                    bottomTitles: SideTitles(
-                      showTitles: true,
-                      getTitles: (value) {
-                        final idx = value.toInt();
-                        if (idx % 5 != 0) return '';
-                        if (idx < 0 || idx >= sortedKeys.length) return '';
-                        return sortedKeys[idx].replaceAll('-', '/');
-                      },
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= sortedKeys.length) return Container();
+                          final label = sortedKeys[idx].replaceAll('-', '/');
+                          return Text(label, style: TextStyle(fontSize: 10));
+                        },
+                      ),
                     ),
                   ),
                   gridData: FlGridData(show: true),
@@ -333,25 +354,26 @@ class _StatisticsPageState extends State<StatisticsPage> {
         SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
-          child: SizedBox(
+            child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.85,
-            height: 220,
-            child: BarChart(
-              BarChartData(
-                barGroups: [
-                  for (int i = 0; i < top.length; i++)
-                    BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: top[i].value.toDouble(),
-                          color: Colors.blue,
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  barGroups: [
+                    for (int i = 0; i < top.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: top[i].value.toDouble(),
+                            color: Colors.blue,
                           width: 18,
                           borderRadius: BorderRadius.circular(4),
-                        ),
-                      ],
-                    ),
-                ],
+                          rodStackItems: [],
+                          ),
+                        ],
+                      ),
+                  ],
                 barTouchData: BarTouchData(
                   enabled: true,
                   touchCallback: (event, response) {
@@ -363,17 +385,59 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     }
                   },
                 ),
-                titlesData: FlTitlesData(
-                  leftTitles: SideTitles(showTitles: true, getTitles: (value) => value.toInt().toString()),
-                  bottomTitles: SideTitles(
-                    showTitles: true,
-                    getTitles: (value) {
-                      final idx = value.toInt();
-                      if (idx % 2 != 0) return '';
-                      if (idx < 0 || idx >= top.length) return '';
-                      final name = top[idx].key;
-                      return name.length > 6 ? name.substring(0, 6) + '…' : name;
-                    },
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Text(
+                          value.toInt().toString(),
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                      reservedSize: 64,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= top.length) return Container();
+                          if (idx % 2 != 0) return Container();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 24),
+                          child: GestureDetector(
+                            onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
+                            child: Transform.rotate(
+                              angle: -0.7,
+                            child: Tooltip(
+                              message: top[idx].key,
+                              child: Text(
+                                top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue,
+                                  ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                ),
+                              ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
                   ),
                 ),
                 gridData: FlGridData(show: true),
@@ -397,37 +461,65 @@ class _StatisticsPageState extends State<StatisticsPage> {
         SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
-          child: SizedBox(
+            child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.85,
-            height: 220,
-            child: BarChart(
-              BarChartData(
-                barGroups: [
-                  for (int i = 0; i < sorted.length; i++)
-                    BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: sorted[i].value.toDouble(),
-                          color: Colors.green,
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  barGroups: [
+                    for (int i = 0; i < sorted.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: sorted[i].value.toDouble(),
+                            color: Colors.green,
+                          ),
+                        ],
+                      ),
+                  ],
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Text(
+                          value.toInt().toString(),
+                          maxLines: 1,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(fontSize: 12),
                         ),
-                      ],
+                      ),
                     ),
-                ],
-                titlesData: FlTitlesData(
-                  leftTitles: SideTitles(showTitles: true, getTitles: (value) => value.toInt().toString()),
-                  bottomTitles: SideTitles(
-                    showTitles: true,
-                    getTitles: (value) {
-                      final idx = value.toInt();
-                      if (idx % 5 != 0) return '';
-                      if (idx < 0 || idx >= sorted.length) return '';
-                      return sorted[idx].key;
-                    },
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                        // Zeige nur jede 5. Jahreszahl an
+                        if (idx % 5 != 0) return Container();
+                          if (idx < 0 || idx >= sorted.length) return Container();
+                        return Text(
+                              sorted[idx].key,
+                          style: TextStyle(fontSize: 10),
+                              maxLines: 1,
+                          overflow: TextOverflow.visible,
+                          );
+                        },
+                      reservedSize: 28,
+                    ),
                   ),
-                ),
-                gridData: FlGridData(show: true),
-                borderData: FlBorderData(show: true),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                    ),
+                  ),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: true),
               ),
             ),
           ),
@@ -443,7 +535,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Bewertungsverteilung', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Bewertungsverteilung',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         SizedBox(height: 16),
         Card(
           child: Padding(
@@ -460,7 +555,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           child: Row(
                             children: List.generate(
                               i,
-                              (index) => Icon(Icons.star, color: Colors.amber, size: 16),
+                                  (index) => Icon(Icons.star, color: Colors.amber, size: 16),
                             ),
                           ),
                         ),
@@ -534,13 +629,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   Widget _buildProgressTimeline(List<Episode> episodes, String title) {
     if (episodes.isEmpty) return SizedBox();
+
+    // Chronologisch sortieren
     final sorted = List<Episode>.from(episodes)
       ..sort((a, b) => (a.veroeffentlichungsdatum ?? '').compareTo(b.veroeffentlichungsdatum ?? ''));
     final total = sorted.length;
     final listened = sorted.where((e) => e.listened).length;
+
+    // Maximal 100 Balken, jeder Balken steht für n Folgen
     const maxBars = 100;
     final bars = <Widget>[];
     final groupSize = (total / maxBars).ceil().clamp(1, total);
+
     for (int i = 0; i < total; i += groupSize) {
       final group = sorted.sublist(i, (i + groupSize).clamp(0, total));
       final listenedCount = group.where((e) => e.listened).length;
@@ -558,15 +658,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
         ),
       );
     }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$title: $listened/$total (${total > 0 ? ((listened / total) * 100).toStringAsFixed(1) : '0'}%)',
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          '$title: $listened/$total (${total > 0 ? ((listened / total) * 100).toStringAsFixed(1) : '0'}%)',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         SizedBox(height: 8),
         Container(
           margin: EdgeInsets.symmetric(horizontal: 8),
-          child: Row(children: bars),
+          child: Row(
+            children: bars,
+          ),
         ),
         SizedBox(height: 12),
       ],
@@ -616,7 +721,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text('Schließen'),
           ),
-        ],
+      ],
       ),
     );
   }
