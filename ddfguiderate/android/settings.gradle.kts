@@ -22,9 +22,17 @@ val flutterProjectRoot = rootProject.projectDir.parentFile
 val pluginsFile = File(flutterProjectRoot, ".flutter-plugins")
 if (pluginsFile.exists()) {
     pluginsFile.readLines().forEach { line ->
-        val (name, path) = line.split("=")
-        include(":$name")
-        project(":$name").projectDir = File(path)
+        if (line.isNotEmpty() && line.contains("=")) {
+            val parts = line.split("=", limit = 2)
+            if (parts.size == 2) {
+                val name = parts[0].trim()
+                val path = parts[1].trim()
+                if (name.isNotEmpty() && path.isNotEmpty()) {
+                    include(":$name")
+                    project(":$name").projectDir = File(path)
+                }
+            }
+        }
     }
 }
 
