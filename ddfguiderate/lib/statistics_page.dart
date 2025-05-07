@@ -391,12 +391,14 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       showTitles: true,
                       getTitlesWidget: (value, meta) => Padding(
                         padding: const EdgeInsets.only(right: 4),
-                        child: Text(
-                          value.toInt().toString(),
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(fontSize: 12),
-                        ),
+                        child: (value % 20 == 0 && value != 0) || value == 0
+                            ? Text(
+                                value.toInt().toString(),
+                                maxLines: 1,
+                                overflow: TextOverflow.visible,
+                                style: TextStyle(fontSize: 12),
+                              )
+                            : SizedBox.shrink(),
                       ),
                     ),
                     ),
