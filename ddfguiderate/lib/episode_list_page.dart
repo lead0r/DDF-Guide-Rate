@@ -27,6 +27,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   String _selectedListened = '';
   String _selectedType = '';
   bool _onlyRated = false;
+  bool _snackbarShown = false;
   
   // Optimiertes Caching-System
   final Map<int, List<Episode>> _tabFilteredCache = {};
