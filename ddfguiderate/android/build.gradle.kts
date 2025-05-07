@@ -16,8 +16,9 @@ allprojects {
         
         // Verwenden Sie einen festen Pfad statt der Projektreferenz
         // Dies vermeidet den Fehler mit der 'android'-Eigenschaft
-        maven(url = "file://${rootProject.projectDir}/../.pub-cache/git/flutter_background_fetch-ff9dbf2a0f07a85ce04a8af25407e590e9e23d80/android/libs")
-        // Alternativ können Sie auch einen lokalen Pfad verwenden, wenn Sie wissen, wo das Plugin installiert ist
+        maven(url = file("${rootProject.projectDir}/../.pub-cache/git/flutter_background_fetch-ff9dbf2a0f07a85ce04a8af25407e590e9e23d80/android/libs").absolutePath)
+        // Alternativ:
+        // maven(url = file("${rootProject.projectDir}/../build/background_fetch/android/libs").absolutePath)
     }
 }
 
