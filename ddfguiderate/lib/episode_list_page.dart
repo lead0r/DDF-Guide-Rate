@@ -27,6 +27,7 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   String _selectedListened = '';
   String _selectedType = '';
   bool _onlyRated = false;
+  String _selectedRole = '';
   List<Episode>? _cachedFilteredEpisodes;
   int? _cachedTabIndex;
   String? _cachedSearch;
@@ -162,6 +163,13 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         
         return matches;
       }).toList();
+    }
+
+    // Filter nach Rolle
+    if (_selectedRole.isNotEmpty) {
+      filtered = filtered.where((ep) =>
+        (ep.sprechrollen ?? []).any((s) => (s['rolle'] ?? '') == _selectedRole)
+      ).toList();
     }
 
     // Optimierte Sortierung
@@ -469,6 +477,23 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     final error = episodeProvider.error;
     final backgroundUpdateFailed = episodeProvider.backgroundUpdateFailed;
 
+    // --- Alle Sprechrollen extrahieren (außer Hauptrollen) ---
+    final Set<String> allRoles = {};
+    for (final ep in episodes) {
+      if (ep.sprechrollen != null) {
+        for (final s in ep.sprechrollen!) {
+          final rolle = (s['rolle'] ?? '').toString();
+          if (rolle.isNotEmpty &&
+              rolle != 'Justus Jonas, Erster Detektiv' &&
+              rolle != 'Peter Shaw, zweiter Detektiv' &&
+              rolle != 'Bob Andrews, Recherchen und Archiv') {
+            allRoles.add(rolle);
+          }
+        }
+      }
+    }
+    final sortedRoles = allRoles.toList()..sort();
+
     // Fehler-Snackbar anzeigen, wenn error != null und noch nicht gezeigt
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (error != null && !_snackbarShown && ScaffoldMessenger.of(context).mounted) {
@@ -541,6 +566,47 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             icon: Icon(Icons.filter_alt),
             tooltip: 'Filter',
             onPressed: _showFilterDialog,
+          ),
+          IconButton(
+            icon: Icon(Icons.record_voice_over),
+            tooltip: 'Rolle filtern',
+            onPressed: () async {
+              final selected = await showDialog<String>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Rolle auswählen'),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        ListTile(
+                          title: Text('Keine Filterung'),
+                          onTap: () => Navigator.pop(context, ''),
+                          selected: _selectedRole.isEmpty,
+                        ),
+                        ...sortedRoles.map((rolle) => ListTile(
+                          title: Text(rolle),
+                          onTap: () => Navigator.pop(context, rolle),
+                          selected: _selectedRole == rolle,
+                        )),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, null),
+                      child: Text('Abbrechen'),
+                    ),
+                  ],
+                ),
+              );
+              if (selected != null) {
+                setState(() {
+                  _selectedRole = selected;
+                });
+              }
+            },
           ),
           IconButton(
             icon: Icon(Icons.settings),
