@@ -5,7 +5,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.3.0")
+        // Upgrade auf 7.3.1, weil Flutter bald die Unterstützung für 7.3.0 einstellen wird
+        classpath("com.android.tools.build:gradle:7.3.1")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.20")
     }
 }
@@ -15,16 +16,12 @@ allprojects {
         google()
         mavenCentral()
         
-        // Der direkte Pfad zum Maven-Repository des background_fetch-Plugins
-        // Wir vermeiden die Verwendung von :background_fetch, da es noch nicht existiert
+        // Verwenden Sie eine Hardcoded URL anstelle der Projektreferenz
+        // Dies vermeidet den Zugriff auf 'android' vor der Definition
         maven {
-            url = uri("${rootProject.projectDir}/../build/host/outputs/repo")
-        }
-        maven {
-            url = uri("https://jitpack.io")
-        }
-        maven {
-            url = uri("https://storage.googleapis.com/download.flutter.io")
+            url = uri("${rootDir}/../.pub-cache/hosted/pub.dartlang.org/background_fetch-0.7.3/android/libs")
+            // Alternativ einen absoluten Pfad verwenden
+            // url = uri("/Users/nevial/StudioProjects/DDF-Guide-Rate/ddfguiderate/.pub-cache/hosted/pub.dartlang.org/background_fetch-0.7.3/android/libs")
         }
     }
 }
@@ -35,8 +32,9 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
-    
-    // Nur die App evaluieren
+}
+
+subprojects {
     project.evaluationDependsOn(":app")
 }
 
