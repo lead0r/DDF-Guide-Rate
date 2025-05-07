@@ -427,7 +427,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                 maxLines: 1,
                                 ),
                               ),
-                              ),
                             ),
                           );
                         },
