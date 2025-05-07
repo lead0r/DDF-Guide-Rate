@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'database_service.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -28,7 +29,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     _calculateStatistics();
   }
 
-  void _calculateStatistics() {
+  Future<void> _calculateStatistics() async {
     final episodeProvider = Provider.of<EpisodeStateProvider>(context, listen: false);
     final episodes = episodeProvider.episodes;
 
@@ -66,11 +67,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
       ratingDistribution[i] = episodes.where((ep) => ep.rating == i).length;
     }
 
-    // Fortschritt über Zeit (Monat/Jahr)
+    // Fortschritt über Zeit (tatsächliches "gehört am"-Datum, gruppiert nach Monat)
     Map<String, int> listenedPerMonth = {};
-    for (var ep in episodes.where((e) => e.listened)) {
-      if (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.length >= 7) {
-        final ym = ep.veroeffentlichungsdatum!.substring(0, 7); // yyyy-MM
+    final db = await DatabaseService().db;
+    final history = await db.query('episode_state_history', where: 'listened = 1');
+    for (var entry in history) {
+      final ts = entry['timestamp'];
+      if (ts != null) {
+        final date = DateTime.fromMillisecondsSinceEpoch(ts);
+        final ym = "${date.year}-${date.month.toString().padLeft(2, '0')}";
         listenedPerMonth[ym] = (listenedPerMonth[ym] ?? 0) + 1;
       }
     }
@@ -91,6 +96,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
       'listenedPerMonth': listenedPerMonth,
       'top10': top10,
     };
+    setState(() {});
   }
 
   Future<void> _shareStatisticsPic() async {
@@ -117,8 +123,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
     final appState = MyApp.of(context);
     final episodeProvider = Provider.of<EpisodeStateProvider>(context);
     final episodes = episodeProvider.episodes;
-
-    _calculateStatistics();
 
     // Gruppiere die Episoden nach Typ
     final mainEpisodes = episodes.where((e) => e.serieTyp == 'Serie').toList();
@@ -222,12 +226,19 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Widget _buildProgressChartSection() {
-    final Map<String, int> listenedPerMonth = Map<String, int>.from(statistics['listenedPerMonth'] as Map);
+    final Map<String, int> listenedPerMonth = Map<String, int>.from(statistics['listenedPerMonth'] as Map? ?? {});
     final sortedKeys = listenedPerMonth.keys.toList()..sort();
+    // Kumulativ berechnen
+    int sum = 0;
+    final List<FlSpot> spots = [];
+    for (int i = 0; i < sortedKeys.length; i++) {
+      sum += listenedPerMonth[sortedKeys[i]]!;
+      spots.add(FlSpot(i.toDouble(), sum.toDouble()));
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Fortschritt über Zeit', style: Theme.of(context).textTheme.titleLarge),
+        Text('Fortschritt über Zeit (gehört am)', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 16),
         Card(
           child: Padding(
@@ -238,10 +249,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 LineChartData(
                   lineBarsData: [
                     LineChartBarData(
-                      spots: [
-                        for (int i = 0; i < sortedKeys.length; i++)
-                          FlSpot(i.toDouble(), listenedPerMonth[sortedKeys[i]]!.toDouble()),
-                      ],
+                      spots: spots,
                       isCurved: true,
                       color: Colors.blue,
                       barWidth: 3,
