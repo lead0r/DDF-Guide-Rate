@@ -257,24 +257,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     ),
                   ],
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          final idx = value.toInt();
-                          if (idx < 0 || idx >= sortedKeys.length) return Container();
-                          final label = sortedKeys[idx].replaceAll('-', '/');
-                          return Text(label, style: TextStyle(fontSize: 10));
-                        },
-                      ),
-                    ),
+                    leftTitles: SideTitles(showTitles: true, getTitles: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= sortedKeys.length) return Container();
+                      final label = sortedKeys[idx].replaceAll('-', '/');
+                      return Text(label, style: TextStyle(fontSize: 10));
+                    }),
+                    bottomTitles: SideTitles(showTitles: true, getTitles: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= sortedKeys.length) return Container();
+                      return Text(sortedKeys[idx].replaceAll('-', '/'), style: TextStyle(fontSize: 10));
+                    }),
                   ),
-                  gridData: FlGridData(show: true),
-                  borderData: FlBorderData(show: true),
                 ),
               ),
             ),
@@ -386,58 +380,43 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   },
                 ),
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) => Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Text(
-                          value.toInt().toString(),
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(fontSize: 12),
-                        ),
+                    show: true,
+                    leftTitles: SideTitles(showTitles: true, getTitles: (value, meta) => Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Text(
+                        value.toInt().toString(),
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
+                        style: TextStyle(fontSize: 12),
                       ),
-                    ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                      reservedSize: 64,
-                        getTitlesWidget: (value, meta) {
-                          final idx = value.toInt();
-                          if (idx < 0 || idx >= top.length) return Container();
-                          if (idx % 2 != 0) return Container();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 24),
-                          child: GestureDetector(
-                            onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
-                            child: Transform.rotate(
-                              angle: -0.7,
-                              child: Tooltip(
-                                message: top[idx].key,
-                                child: Text(
-                                  top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    decoration: TextDecoration.underline,
-                                    color: Colors.blue,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
+                    )),
+                    bottomTitles: SideTitles(showTitles: true, getTitles: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= top.length) return Container();
+                      if (idx % 2 != 0) return Container();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 24),
+                      child: GestureDetector(
+                        onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
+                        child: Transform.rotate(
+                          angle: -0.7,
+                          child: Tooltip(
+                            message: top[idx].key,
+                            child: Text(
+                              top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                              style: TextStyle(
+                                fontSize: 9,
+                                decoration: TextDecoration.underline,
+                                color: Colors.blue,
                               ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                        ),
+                      ),
+                    );
+                  }),
                 ),
                 gridData: FlGridData(show: true),
                 borderData: FlBorderData(show: true),
@@ -478,47 +457,33 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       ),
                   ],
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) => Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Text(
-                          value.toInt().toString(),
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(fontSize: 12),
-                        ),
+                    leftTitles: SideTitles(showTitles: true, getTitles: (value, meta) => Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Text(
+                        value.toInt().toString(),
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
+                        style: TextStyle(fontSize: 12),
                       ),
-                    ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final idx = value.toInt();
-                        // Zeige nur jede 5. Jahreszahl an
-                        if (idx % 5 != 0) return Container();
-                          if (idx < 0 || idx >= sorted.length) return Container();
-                        return Text(
-                              sorted[idx].key,
-                          style: TextStyle(fontSize: 10),
-                              maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          );
-                        },
-                      reservedSize: 28,
-                    ),
+                    )),
+                    bottomTitles: SideTitles(showTitles: true, getTitles: (value, meta) {
+                      final idx = value.toInt();
+                    // Zeige nur jede 5. Jahreszahl an
+                    if (idx % 5 != 0) return Container();
+                      if (idx < 0 || idx >= sorted.length) return Container();
+                    return Text(
+                          sorted[idx].key,
+                      style: TextStyle(fontSize: 10),
+                          maxLines: 1,
+                      overflow: TextOverflow.visible,
+                      );
+                    },
+                    reservedSize: 28,
                   ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  gridData: FlGridData(show: true),
-                  borderData: FlBorderData(show: true),
+                ),
+                ),
+                gridData: FlGridData(show: true),
+                borderData: FlBorderData(show: true),
               ),
             ),
           ),
