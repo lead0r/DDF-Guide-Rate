@@ -27,49 +27,27 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
   String _selectedListened = '';
   String _selectedType = '';
   bool _onlyRated = false;
-  List<Episode>? _cachedFilteredEpisodes;
-  int? _cachedTabIndex;
-  String? _cachedSearch;
-  String? _cachedSortBy;
-  String? _cachedSelectedAuthor;
-  String? _cachedSelectedYear;
-  int? _cachedSelectedRating;
-  String? _cachedSelectedListened;
-  String? _cachedSelectedType;
-  bool? _cachedOnlyRated;
-  List<Episode>? _cachedEpisodes;
-  bool _snackbarShown = false;
+  
+  // Optimiertes Caching-System
   final Map<int, List<Episode>> _tabFilteredCache = {};
-  int? _lastTabIndex;
-  String? _lastSearch;
-  String? _lastSortBy;
-  String? _lastSelectedAuthor;
-  String? _lastSelectedYear;
-  int? _lastSelectedRating;
-  String? _lastSelectedListened;
-  String? _lastSelectedType;
-  bool? _lastOnlyRated;
-  List<Episode>? _lastEpisodes;
+  final Map<int, Map<String, dynamic>> _lastFilterParams = {};
+  bool _isTabChanging = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
-      if (_tabController.indexIsChanging || _tabController.index != _tabController.previousIndex) {
-        setState(() {
-          _tabFilteredCache.clear();
-          _lastTabIndex = null;
-          _lastSearch = null;
-          _lastSortBy = null;
-          _lastSelectedAuthor = null;
-          _lastSelectedYear = null;
-          _lastSelectedRating = null;
-          _lastSelectedListened = null;
-          _lastSelectedType = null;
-          _lastOnlyRated = null;
-          _lastEpisodes = null;
-        });
+      if (_tabController.indexIsChanging) {
+        _isTabChanging = true;
+      } else if (_isTabChanging) {
+        _isTabChanging = false;
+        // Nur den Cache für den vorherigen Tab löschen, wenn sich die Filter-Parameter geändert haben
+        final prevIndex = _tabController.previousIndex;
+        final currentParams = _getCurrentFilterParams();
+        if (_lastFilterParams[prevIndex] != currentParams) {
+          _tabFilteredCache.remove(prevIndex);
+        }
       }
     });
     _searchController.addListener(() {
@@ -79,25 +57,32 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     });
   }
 
+  Map<String, dynamic> _getCurrentFilterParams() {
+    return {
+      'search': _search,
+      'sortBy': _sortBy,
+      'author': _selectedAuthor,
+      'year': _selectedYear,
+      'rating': _selectedRating,
+      'listened': _selectedListened,
+      'type': _selectedType,
+      'onlyRated': _onlyRated,
+    };
+  }
+
   List<Episode> getFilteredEpisodesForCurrentTab(List<Episode> episodes) {
-    // Prüfe, ob sich relevante Parameter geändert haben
-    if (_lastTabIndex == _tabController.index &&
-        _lastSearch == _search &&
-        _lastSortBy == _sortBy &&
-        _lastSelectedAuthor == _selectedAuthor &&
-        _lastSelectedYear == _selectedYear &&
-        _lastSelectedRating == _selectedRating &&
-        _lastSelectedListened == _selectedListened &&
-        _lastSelectedType == _selectedType &&
-        _lastOnlyRated == _onlyRated &&
-        _lastEpisodes == episodes &&
-        _tabFilteredCache.containsKey(_tabController.index)) {
-      return _tabFilteredCache[_tabController.index]!;
+    final currentTab = _tabController.index;
+    final currentParams = _getCurrentFilterParams();
+    
+    // Prüfe, ob wir den Cache wiederverwenden können
+    if (_tabFilteredCache.containsKey(currentTab) && 
+        _lastFilterParams[currentTab] == currentParams) {
+      return _tabFilteredCache[currentTab]!;
     }
 
-    // Filtere nach Tab - Optimierte Version
+    // Filtere nach Tab
     List<Episode> filtered;
-    switch (_tabController.index) {
+    switch (currentTab) {
       case 0:
         filtered = episodes.where((e) => e.serieTyp == 'Serie' || e.serieTyp == 'Spezial' || e.serieTyp == 'Kurzgeschichte').toList();
         break;
@@ -111,13 +96,12 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
         filtered = [];
     }
 
-    // Optimierte Filterung: Kombiniere alle Filter in einer Schleife
+    // Optimierte Filterung
     if (_search.isNotEmpty || _selectedAuthor.isNotEmpty || _selectedYear.isNotEmpty || 
         _selectedRating != -1 || _selectedListened.isNotEmpty || _selectedType.isNotEmpty || _onlyRated) {
       filtered = filtered.where((ep) {
         bool matches = true;
         
-        // Suchtext
         if (_search.isNotEmpty) {
           matches = matches && (
             ep.titel.toLowerCase().contains(_search.toLowerCase()) ||
@@ -126,28 +110,23 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           );
         }
         
-        // Autor
         if (_selectedAuthor.isNotEmpty) {
           matches = matches && ep.autor == _selectedAuthor;
         }
         
-        // Jahr
         if (_selectedYear.isNotEmpty) {
           matches = matches && (ep.veroeffentlichungsdatum != null && 
             ep.veroeffentlichungsdatum!.startsWith(_selectedYear));
         }
         
-        // Bewertung
         if (_selectedRating != -1) {
           matches = matches && ep.rating == _selectedRating;
         }
         
-        // Gehört-Status
         if (_selectedListened.isNotEmpty) {
           matches = matches && (_selectedListened == 'true' ? ep.listened : !ep.listened);
         }
         
-        // Typ
         if (_selectedType.isNotEmpty) {
           matches = matches && (
             (_selectedType == 'Spezial' && ep.serieTyp == 'Spezial') ||
@@ -155,7 +134,6 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           );
         }
         
-        // Nur bewertete
         if (_onlyRated) {
           matches = matches && ep.rating > 0;
         }
@@ -187,17 +165,8 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
     }
 
     // Cache aktualisieren
-    _tabFilteredCache[_tabController.index] = filtered;
-    _lastTabIndex = _tabController.index;
-    _lastSearch = _search;
-    _lastSortBy = _sortBy;
-    _lastSelectedAuthor = _selectedAuthor;
-    _lastSelectedYear = _selectedYear;
-    _lastSelectedRating = _selectedRating;
-    _lastSelectedListened = _selectedListened;
-    _lastSelectedType = _selectedType;
-    _lastOnlyRated = _onlyRated;
-    _lastEpisodes = episodes;
+    _tabFilteredCache[currentTab] = filtered;
+    _lastFilterParams[currentTab] = currentParams;
 
     return filtered;
   }
@@ -622,11 +591,9 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
                 ? Center(child: CircularProgressIndicator())
                 : TabBarView(
                     controller: _tabController,
-                    children: [
-                      _buildList(getFilteredEpisodesForCurrentTab(episodes)),
-                      _buildList(getFilteredEpisodesForCurrentTab(episodes)),
-                      _buildList(getFilteredEpisodesForCurrentTab(episodes)),
-                    ],
+                    children: List.generate(3, (index) => 
+                      _buildList(getFilteredEpisodesForCurrentTab(episodes))
+                    ),
                   ),
           ),
         ],

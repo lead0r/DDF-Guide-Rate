@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'database_service.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -66,31 +67,48 @@ class _StatisticsPageState extends State<StatisticsPage> {
       ratingDistribution[i] = episodes.where((ep) => ep.rating == i).length;
     }
 
-    // Fortschritt über Zeit (Monat/Jahr)
-    Map<String, int> listenedPerMonth = {};
-    for (var ep in episodes.where((e) => e.listened)) {
-      if (ep.veroeffentlichungsdatum != null && ep.veroeffentlichungsdatum!.length >= 7) {
-        final ym = ep.veroeffentlichungsdatum!.substring(0, 7); // yyyy-MM
-        listenedPerMonth[ym] = (listenedPerMonth[ym] ?? 0) + 1;
-      }
-    }
-
     // Top 10 Lieblingsepisoden
     List<Episode> top10 = List<Episode>.from(ratedEpisodes)
       ..sort((a, b) => b.rating.compareTo(a.rating));
     if (top10.length > 10) top10 = top10.sublist(0, 10);
 
-    statistics = {
-      'totalEpisodes': totalEpisodes,
-      'listenedEpisodes': listenedEpisodes,
-      'listenedPercentage': listenedPercentage.toStringAsFixed(1),
-      'averageRating': averageRating.toStringAsFixed(1),
-      'authorCounts': authorCounts,
-      'yearCounts': yearCounts,
-      'ratingDistribution': ratingDistribution,
-      'listenedPerMonth': listenedPerMonth,
-      'top10': top10,
-    };
+    // Lade die History-Daten für den Fortschritt
+    DatabaseService().getAllStates().then((states) async {
+      Map<String, int> listenedPerDay = {};
+      
+      for (var state in states) {
+        if (state['listened'] == 1) {
+          final history = await DatabaseService().getHistory(state['episode_id']);
+          if (history.isNotEmpty) {
+            // Finde den ersten Eintrag, wo listened = 1
+            final firstListened = history.firstWhere(
+              (h) => h['listened'] == 1,
+              orElse: () => history.first,
+            );
+            
+            if (firstListened['timestamp'] != null) {
+              final date = DateTime.fromMillisecondsSinceEpoch(firstListened['timestamp']);
+              final key = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+              listenedPerDay[key] = (listenedPerDay[key] ?? 0) + 1;
+            }
+          }
+        }
+      }
+
+      setState(() {
+        statistics = {
+          'totalEpisodes': totalEpisodes,
+          'listenedEpisodes': listenedEpisodes,
+          'listenedPercentage': listenedPercentage.toStringAsFixed(1),
+          'averageRating': averageRating.toStringAsFixed(1),
+          'authorCounts': authorCounts,
+          'yearCounts': yearCounts,
+          'ratingDistribution': ratingDistribution,
+          'listenedPerMonth': listenedPerDay,
+          'top10': top10,
+        };
+      });
+    });
   }
 
   Future<void> _shareStatisticsPic() async {
@@ -222,12 +240,25 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Widget _buildProgressChartSection() {
-    final Map<String, int> listenedPerMonth = Map<String, int>.from(statistics['listenedPerMonth'] as Map);
+    final Map<String, int> listenedPerMonth = Map<String, int>.from(statistics['listenedPerMonth'] as Map? ?? {});
     final sortedKeys = listenedPerMonth.keys.toList()..sort();
+    
+    // Kumulativen Fortschritt berechnen
+    List<FlSpot> spots = [];
+    int cumulative = 0;
+    for (int i = 0; i < sortedKeys.length; i++) {
+      cumulative += listenedPerMonth[sortedKeys[i]]!;
+      spots.add(FlSpot(i.toDouble(), cumulative.toDouble()));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Fortschritt über Zeit', style: Theme.of(context).textTheme.titleLarge),
+        Text('Hörfortschritt', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Zeigt an, wann Sie die Folgen als "gehört" markiert haben',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         SizedBox(height: 16),
         Card(
           child: Padding(
@@ -238,34 +269,61 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 LineChartData(
                   lineBarsData: [
                     LineChartBarData(
-                      spots: [
-                        for (int i = 0; i < sortedKeys.length; i++)
-                          FlSpot(i.toDouble(), listenedPerMonth[sortedKeys[i]]!.toDouble()),
-                      ],
+                      spots: spots,
                       isCurved: true,
                       color: Colors.blue,
                       barWidth: 3,
-                      dotData: FlDotData(show: false),
+                      dotData: FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: Colors.blue.withOpacity(0.1),
+                      ),
                     ),
                   ],
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: 1,
+                        interval: max(1, (sortedKeys.length / 6).floor()).toDouble(),
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
                           if (idx < 0 || idx >= sortedKeys.length) return Container();
-                          final label = sortedKeys[idx].replaceAll('-', '/');
-                          return Text(label, style: TextStyle(fontSize: 10));
+                          final parts = sortedKeys[idx].split('-');
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              '${parts[0]}\n${parts[1]}',
+                              style: TextStyle(fontSize: 10),
+                              textAlign: TextAlign.center,
+                            ),
+                          );
                         },
                       ),
                     ),
                   ),
-                  gridData: FlGridData(show: true),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    horizontalInterval: 10,
+                  ),
                   borderData: FlBorderData(show: true),
                 ),
               ),
