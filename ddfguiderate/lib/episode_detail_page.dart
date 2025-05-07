@@ -99,13 +99,35 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
     Share.share(text);
   }
 
+  String _providerToLinkKey(String provider) {
+    switch (provider) {
+      case 'StreamingProvider.spotify':
+        return 'spotify';
+      case 'StreamingProvider.appleMusic':
+        return 'appleMusic';
+      case 'StreamingProvider.bookbeat':
+        return 'bookbeat';
+      case 'StreamingProvider.amazonMusic':
+        return 'amazonMusic';
+      case 'StreamingProvider.amazon':
+        return 'amazon';
+      case 'StreamingProvider.youtubeMusic':
+        return 'youtubeMusic';
+      default:
+        return 'spotify';
+    }
+  }
+
   void _openStreaming() async {
-    final url = widget.episode.links['spotify'] ?? widget.episode.spotifyUrl;
+    final prefs = await SharedPreferences.getInstance();
+    final provider = prefs.getString('streaming_provider') ?? 'StreamingProvider.spotify';
+    final linkKey = _providerToLinkKey(provider);
+    final url = widget.episode.links[linkKey] ?? widget.episode.spotifyUrl;
     if (url != null && await canLaunch(url)) {
       await launch(url);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Streaming-Link nicht verfügbar.')),
+        SnackBar(content: Text('Streaming-Link für den gewählten Anbieter nicht verfügbar.')),
       );
     }
   }
