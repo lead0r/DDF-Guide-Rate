@@ -1,11 +1,13 @@
 pluginManagement {
-    def flutterSdkPath = {
-        def properties = new Properties()
-        file("local.properties").withInputStream { properties.load(it) }
-        def flutterSdkPath = properties.getProperty("flutter.sdk")
-        assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
-        return flutterSdkPath
-    }()
+    // Kotlin-entsprechende Version der Flutter SDK-Pfad-Ermittlung
+    val flutterSdkPath: String by lazy {
+        val properties = java.util.Properties()
+        file("local.properties").inputStream().use { properties.load(it) }
+        val flutterSdkPath = properties.getProperty("flutter.sdk") 
+            ?: throw GradleException("flutter.sdk not set in local.properties")
+        flutterSdkPath
+    }
+    
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
     
     repositories {
@@ -15,6 +17,7 @@ pluginManagement {
     }
 }
 
+// Neuer deklarativer Flutter-Plugin-Ansatz
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
 }
@@ -22,7 +25,3 @@ plugins {
 rootProject.name = "android"
 
 include(":app")
-include(":background_fetch")
-
-// Dies weist auf den richtigen Pfad für das background_fetch-Modul hin
-project(":background_fetch").projectDir = file("../build/background_fetch/android")

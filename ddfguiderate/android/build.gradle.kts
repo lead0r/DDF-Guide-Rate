@@ -1,3 +1,4 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
         google()
@@ -14,11 +15,17 @@ allprojects {
         google()
         mavenCentral()
         
-        // Verwenden Sie einen festen Pfad statt der Projektreferenz
-        // Dies vermeidet den Fehler mit der 'android'-Eigenschaft
-        maven(url = file("${rootProject.projectDir}/../.pub-cache/git/flutter_background_fetch-ff9dbf2a0f07a85ce04a8af25407e590e9e23d80/android/libs").absolutePath)
-        // Alternativ:
-        // maven(url = file("${rootProject.projectDir}/../build/background_fetch/android/libs").absolutePath)
+        // Der direkte Pfad zum Maven-Repository des background_fetch-Plugins
+        // Wir vermeiden die Verwendung von :background_fetch, da es noch nicht existiert
+        maven {
+            url = uri("${rootProject.projectDir}/../build/host/outputs/repo")
+        }
+        maven {
+            url = uri("https://jitpack.io")
+        }
+        maven {
+            url = uri("https://storage.googleapis.com/download.flutter.io")
+        }
     }
 }
 
@@ -28,13 +35,9 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
-}
-
-subprojects {
-    // Nur die App evaluieren, nicht background_fetch
-    if (project.name != "background_fetch") {
-        project.evaluationDependsOn(":app")
-    }
+    
+    // Nur die App evaluieren
+    project.evaluationDependsOn(":app")
 }
 
 tasks.register<Delete>("clean") {
