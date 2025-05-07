@@ -1,5 +1,5 @@
-name: ddfguide_flutter
-description: A Flutter project migrated from Xamarin to Flutter with rating and details.
+name: ddf_tracker
+description: DDF Tracker: Die App für deine drei ??? Hörspielstatistik
 
 publish_to: 'none'
 
