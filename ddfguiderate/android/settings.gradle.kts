@@ -1,14 +1,4 @@
 pluginManagement {
-    val flutterSdkPath = run {
-        val properties = java.util.Properties()
-        file("local.properties").inputStream().use { properties.load(it) }
-        val flutterSdkPath = properties.getProperty("flutter.sdk")
-        require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
-        flutterSdkPath
-    }
-
-    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-
     repositories {
         google()
         mavenCentral()
@@ -16,11 +6,35 @@ pluginManagement {
     }
 }
 
-plugins {
-    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
 }
 
+rootProject.name = "ddfguiderate"
 include(":app")
 
-// This is required for Flutter
-apply(from = "${settingsDir.parentFile.toPath()}/.android/include_flutter.groovy")
+// Flutter configuration
+val flutterProjectRoot = rootProject.projectDir.parentFile
+val plugins = new File(flutterProjectRoot, '.flutter-plugins')
+if (plugins.exists()) {
+    plugins.eachLine { line ->
+        def (name, path) = line.split('=')
+        include(":$name")
+        project(":$name").projectDir = new File(path)
+    }
+}
+
+// Flutter SDK path
+val localProperties = new File(flutterProjectRoot, "local.properties")
+if (localProperties.exists()) {
+    Properties properties = new Properties()
+    localProperties.withInputStream { properties.load(it) }
+    val flutterSdkPath = properties.getProperty('flutter.sdk')
+    if (flutterSdkPath != null) {
+        apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+    }
+}
