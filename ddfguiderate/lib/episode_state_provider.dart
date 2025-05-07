@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'episode.dart';
 import 'database_service.dart';
 import 'episode_data_service.dart';
+import 'episode_cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async'; // Für unawaited
@@ -11,11 +12,13 @@ class EpisodeStateProvider extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   bool _backgroundUpdateFailed = false;
+  List<String> _cachedRoles = [];
 
   List<Episode> get episodes => _episodes;
   bool get loading => _loading;
   String? get error => _error;
   bool get backgroundUpdateFailed => _backgroundUpdateFailed;
+  List<String> get cachedRoles => _cachedRoles;
 
   Future<void> loadEpisodes() async {
     _loading = true;
@@ -33,11 +36,13 @@ class EpisodeStateProvider extends ChangeNotifier {
         dataService.fetchEpisodes(type: 'Kids'),
         dataService.fetchEpisodes(type: 'DR3i'),
         DatabaseService().getAllStates(),
+        EpisodeCacheService.loadRolesFromCache(), // NEU: Rollen aus Cache laden
       ]);
       List<Episode> main = [...results[0] as List<Episode>, ...results[1] as List<Episode>, ...results[2] as List<Episode>];
       List<Episode> kids = results[3] as List<Episode>;
       List<Episode> dr3i = results[4] as List<Episode>;
       final dbStates = results[5] as List<Map<String, dynamic>>;
+      _cachedRoles = results[6] as List<String>; // NEU: Gecachte Rollen speichern
 
       // --- Orphaned States bereinigen, bevor States angewendet werden ---
       final allEpisodeIds = [...main, ...kids, ...dr3i].map((e) => e.id).toList();
@@ -112,6 +117,29 @@ class EpisodeStateProvider extends ChangeNotifier {
       applyState(freshDr3i);
 
       final freshEpisodes = [...freshMain, ...freshKids, ...freshDr3i];
+      
+      // NEU: Rollen im Hintergrund aktualisieren
+      final Set<String> allRoles = {};
+      for (final ep in freshEpisodes) {
+        if (ep.sprechrollen != null) {
+          for (final s in ep.sprechrollen!) {
+            final rolle = (s['rolle'] ?? '').toString();
+            if (rolle.isNotEmpty &&
+                rolle != 'Justus Jonas, Erster Detektiv' &&
+                rolle != 'Peter Shaw, zweiter Detektiv' &&
+                rolle != 'Bob Andrews, Recherchen und Archiv') {
+              allRoles.add(rolle);
+            }
+          }
+        }
+      }
+      final sortedRoles = allRoles.toList()..sort();
+      if (!_listEquals(_cachedRoles, sortedRoles)) {
+        _cachedRoles = sortedRoles;
+        await EpisodeCacheService.saveRolesToCache(sortedRoles);
+        notifyListeners();
+      }
+
       // Hash-Vergleich statt nur ID-Vergleich
       if (!_listEqualsWithHash(_episodes, freshEpisodes)) {
         _episodes = freshEpisodes;
@@ -172,10 +200,10 @@ class EpisodeStateProvider extends ChangeNotifier {
   }
 
   // Hilfsfunktion zum Vergleichen von Listen
-  bool _listEquals(List<Episode> a, List<Episode> b) {
+  bool _listEquals(List<String> a, List<String> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
-      if (a[i].id != b[i].id) return false;
+      if (a[i] != b[i]) return false;
     }
     return true;
   }

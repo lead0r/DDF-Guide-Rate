@@ -300,23 +300,8 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
       DropdownMenuItem(value: 'false', child: Text('Nicht gehört')),
     ];
 
-    // --- Alle Sprechrollen extrahieren (außer Hauptrollen) ---
-    final Set<String> allRoles = {};
-    for (final ep in episodes) {
-      if (ep.sprechrollen != null) {
-        for (final s in ep.sprechrollen!) {
-          final rolle = (s['rolle'] ?? '').toString();
-          if (rolle.isNotEmpty &&
-              rolle != 'Justus Jonas, Erster Detektiv' &&
-              rolle != 'Peter Shaw, zweiter Detektiv' &&
-              rolle != 'Bob Andrews, Recherchen und Archiv') {
-            allRoles.add(rolle);
-          }
-        }
-      }
-    }
-    final sortedRoles = allRoles.toList()..sort();
-
+    // NEU: Gecachte Rollen verwenden
+    final sortedRoles = episodeProvider.cachedRoles;
     final roleItems = sortedRoles.isEmpty
       ? [DropdownMenuItem(value: '', child: Text('Keine Rollen'))]
       : [DropdownMenuItem(value: '', child: Text('Alle Rollen'))] +
