@@ -4,7 +4,6 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    // Flutter-Gradle-Plugin
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -15,7 +14,6 @@ if (keystorePropertiesFile.exists()) {
 }
 
 dependencies {
-    // ... andere dependencies ...
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 

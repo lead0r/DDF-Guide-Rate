@@ -6,6 +6,12 @@ pluginManagement {
     }
 }
 
-rootProject.name = "android"
+val flutterSdkPath = Properties().apply {
+    FileInputStream(file("local.properties")).use { load(it) }
+}.getProperty("flutter.sdk")
+
+if (flutterSdkPath != null) {
+    includeBuild(File(flutterSdkPath, "packages/flutter_tools/gradle"))
+}
 
 include(":app")
