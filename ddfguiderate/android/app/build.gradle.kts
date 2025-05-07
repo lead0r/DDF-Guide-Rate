@@ -2,9 +2,9 @@ import java.util.Properties
 import java.io.FileInputStream
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("dev.flutter.flutter-gradle-plugin")
+    id("com.android.application") version "7.3.1"
+    id("org.jetbrains.kotlin.android") version "1.7.20"
+    id("dev.flutter.flutter-gradle-plugin") version "1.0.0"
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
