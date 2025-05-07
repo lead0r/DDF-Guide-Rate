@@ -414,23 +414,23 @@ class _StatisticsPageState extends State<StatisticsPage> {
                             onTap: () => _showAuthorEpisodesDialog(context, top[idx].key, episodes),
                             child: Transform.rotate(
                               angle: -0.7,
-                            child: Tooltip(
-                              message: top[idx].key,
-                              child: Text(
-                                top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
+                              child: Tooltip(
+                                message: top[idx].key,
+                                child: Text(
+                                  top[idx].key.length > 8 ? top[idx].key.substring(0, 8) + '…' : top[idx].key,
                                   style: TextStyle(
                                     fontSize: 9,
                                     decoration: TextDecoration.underline,
                                     color: Colors.blue,
                                   ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   topTitles: AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
