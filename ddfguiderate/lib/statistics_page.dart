@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/rendering.dart';
 
 class StatisticsPage extends StatefulWidget {
   @override
@@ -240,10 +241,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     ),
                   ],
                   titlesData: FlTitlesData(
-                    leftTitles: SideTitles(showTitles: true, getTitles: (value) => value.toInt().toString()),
+                    leftTitles: SideTitles(showTitles: true, (value) => value.toInt().toString()),
                     bottomTitles: SideTitles(
                       showTitles: true,
-                      getTitles: (value) {
+                      (value) {
                         final idx = value.toInt();
                         if (idx % 5 != 0) return '';
                         if (idx < 0 || idx >= sortedKeys.length) return '';
@@ -363,10 +364,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   },
                 ),
                 titlesData: FlTitlesData(
-                  leftTitles: SideTitles(showTitles: true, getTitles: (value) => value.toInt().toString()),
+                  leftTitles: SideTitles(showTitles: true, (value) => value.toInt().toString()),
                   bottomTitles: SideTitles(
                     showTitles: true,
-                    getTitles: (value) {
+                    (value) {
                       final idx = value.toInt();
                       if (idx % 2 != 0) return '';
                       if (idx < 0 || idx >= top.length) return '';
@@ -414,10 +415,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     ),
                 ],
                 titlesData: FlTitlesData(
-                  leftTitles: SideTitles(showTitles: true, getTitles: (value) => value.toInt().toString()),
+                  leftTitles: SideTitles(showTitles: true, (value) => value.toInt().toString()),
                   bottomTitles: SideTitles(
                     showTitles: true,
-                    getTitles: (value) {
+                    (value) {
                       final idx = value.toInt();
                       if (idx % 5 != 0) return '';
                       if (idx < 0 || idx >= sorted.length) return '';
