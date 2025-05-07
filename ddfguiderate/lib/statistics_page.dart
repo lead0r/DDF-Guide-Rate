@@ -258,17 +258,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   ],
                   titlesData: FlTitlesData(
                     leftTitles: SideTitles(showTitles: true, getTitles: (value) => value.toInt().toString()),
-                    bottomTitles: SideTitles(
-                      showTitles: true,
-                      getTitles: (value) {
-                        final idx = value.toInt();
-                        if (idx % 5 != 0) return '';
-                        if (idx < 0 || idx >= sortedKeys.length) return '';
-                        return sortedKeys[idx].replaceAll('-', '/');
-                      },
-                    ),
+                    bottomTitles: SideTitles(showTitles: true, getTitles: (value) {
+                      final idx = value.toInt();
+                      if (idx % 5 != 0) return '';
+                      if (idx < 0 || idx >= sortedKeys.length) return '';
+                      return sortedKeys[idx].replaceAll('-', '/');
+                    }),
                   ),
                 ),
+                gridData: FlGridData(show: true),
               ),
             ),
           ),
