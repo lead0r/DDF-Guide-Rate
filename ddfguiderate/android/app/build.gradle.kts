@@ -2,9 +2,10 @@ import java.util.Properties
 import java.io.FileInputStream
 
 plugins {
-    id("com.android.application") version "7.3.1"
-    id("org.jetbrains.kotlin.android") version "1.7.20"
-    id("dev.flutter.flutter-gradle-plugin") version "1.0.0"
+    id("com.android.application")
+    id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -14,6 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 dependencies {
+    // ... andere dependencies ...
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 
@@ -33,6 +35,7 @@ android {
     }
 
     defaultConfig {
+        // Anwendungspaket-ID: bitte anpassen!
         applicationId = "com.nevial.ddfguiderate"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
@@ -41,7 +44,7 @@ android {
     }
 
     signingConfigs {
-        create("release") {
+            create("release") {
             if (keystoreProperties.isNotEmpty()) {
                 storeFile = file(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
@@ -53,7 +56,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+                signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(

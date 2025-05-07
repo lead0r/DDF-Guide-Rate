@@ -12,6 +12,3 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
-
-flutter.sdk=/opt/homebrew/bin/flutter
-

@@ -2,9 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url = uri("${rootDir}/../.pub-cache/hosted/pub.dartlang.org/background_fetch-1.3.8/android/libs")
-        }
+        // [required] background_fetch
+        maven(url = "${project(":background_fetch").projectDir}/libs") 
     }
 }
 
@@ -15,7 +14,6 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
-
 subprojects {
     project.evaluationDependsOn(":app")
 }
