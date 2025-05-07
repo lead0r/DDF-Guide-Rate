@@ -439,15 +439,21 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      getTitlesWidget: (value, meta) => Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Text(
-                          value.toInt().toString(),
-                          maxLines: 1,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
+                      getTitlesWidget: (value, meta) {
+                        // Finde den höchsten Wert
+                        final maxValue = top.fold<int>(0, (max, entry) => entry.value > max ? entry.value : max);
+                        // Zeige nur Werte an, die kleiner als der höchste Wert sind
+                        if (value >= maxValue) return Container();
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            value.toInt().toString(),
+                            maxLines: 1,
+                            overflow: TextOverflow.visible,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        );
+                      },
                     ),
                     ),
                     bottomTitles: AxisTitles(
