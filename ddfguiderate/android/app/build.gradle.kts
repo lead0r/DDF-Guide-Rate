@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 dependencies {
     // ... andere dependencies ...
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-    classpath("com.android.tools.build:gradle:8.5.2")
+    implementation("com.android.tools.build:gradle:8.5.2")
 
 }
 
