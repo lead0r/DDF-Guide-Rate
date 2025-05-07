@@ -210,17 +210,20 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 SizedBox(height: 16),
                 Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
-                FutureBuilder<String>(
-                  future: _getProviderName(),
-                  builder: (context, snapshot) {
-                    final provider = snapshot.data ?? 'Spotify';
-                    return ElevatedButton.icon(
-                      icon: Icon(Icons.play_arrow),
-                      label: Text('Auf $provider abspielen'),
-                      onPressed: _openStreaming,
-                    );
-                  },
-                ),
+                if (ep.serieTyp != 'DR3i') ...[
+                  FutureBuilder<String>(
+                    future: _getProviderName(),
+                    builder: (context, snapshot) {
+                      final provider = snapshot.data ?? 'Spotify';
+                      return ElevatedButton.icon(
+                        icon: Icon(Icons.play_arrow),
+                        label: Text('Auf $provider abspielen'),
+                        onPressed: _openStreaming,
+                      );
+                    },
+                  ),
+                  SizedBox(height: 16),
+                ],
                 SizedBox(height: 16),
                 if (ep.sprechrollen != null && ep.sprechrollen!.isNotEmpty) ...[
                   Text('Sprecher:', style: Theme.of(context).textTheme.titleMedium),
