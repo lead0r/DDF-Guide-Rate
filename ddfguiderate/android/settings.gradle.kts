@@ -1,45 +1,16 @@
 pluginManagement {
-    val flutterSdkPath = run {
-        val properties = java.util.Properties()
-        file("local.properties").inputStream().use { properties.load(it) }
-        val flutterSdkPath = properties.getProperty("flutter.sdk")
-        require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
-        flutterSdkPath
-    }
-
-    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-        maven { url = uri("https://www.transistorsoft.com/maven") }
     }
 }
 
-plugins {
-    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.7.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
-}
+rootProject.name = "android"
 
 include(":app")
+include(":background_fetch")
 
-// Flutter configuration
-val flutterProjectRoot = rootProject.projectDir.parentFile
-val pluginsFile = File(flutterProjectRoot, ".flutter-plugins")
-if (pluginsFile.exists()) {
-    pluginsFile.readLines().forEach { line ->
-        if (line.isNotEmpty() && line.contains("=")) {
-            val parts = line.split("=", limit = 2)
-            if (parts.size == 2) {
-                val name = parts[0].trim()
-                val path = parts[1].trim()
-                if (name.isNotEmpty() && path.isNotEmpty()) {
-                    include(":$name")
-                    project(":$name").projectDir = File(path)
-                }
-            }
-        }
-    }
-}
+// Stellen Sie sicher, dass background_fetch richtig eingebunden ist
+// Dies weist auf den richtigen Pfad für das background_fetch-Modul hin
+project(":background_fetch").projectDir = file("../build/background_fetch/android")

@@ -17,6 +17,9 @@ if (keystorePropertiesFile.exists()) {
 dependencies {
     // ... andere dependencies ...
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    
+    // background_fetch Abhängigkeit hinzufügen
+    implementation(project(":background_fetch"))
 }
 
 android {
