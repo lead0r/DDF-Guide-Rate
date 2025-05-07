@@ -174,7 +174,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
             SizedBox(height: 24),
             Divider(thickness: 2, height: 40),
             Text(
-              'Allgemeine Statistiken (unabhängig von deinen Eingaben)',
+              'Allgemeine Statistiken',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             SizedBox(height: 16),
