@@ -100,12 +100,15 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
   }
 
   void _openStreaming() async {
-    final url = widget.episode.links['spotify'] ?? widget.episode.spotifyUrl;
+    final prefs = await SharedPreferences.getInstance();
+    final provider = prefs.getString('streaming_provider') ?? 'StreamingProvider.spotify';
+    final linkKey = _providerToLinkKey(provider);
+    final url = widget.episode.links[linkKey] ?? widget.episode.spotifyUrl;
     if (url != null && await canLaunch(url)) {
       await launch(url);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Streaming-Link nicht verfügbar.')),
+        SnackBar(content: Text('Streaming-Link für den gewählten Anbieter nicht verfügbar.')),
       );
     }
   }
@@ -141,6 +144,25 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
       return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
     } catch (_) {
       return '';
+    }
+  }
+
+  String _providerToLinkKey(String provider) {
+    switch (provider) {
+      case 'StreamingProvider.spotify':
+        return 'spotify';
+      case 'StreamingProvider.appleMusic':
+        return 'appleMusic';
+      case 'StreamingProvider.bookbeat':
+        return 'bookbeat';
+      case 'StreamingProvider.amazonMusic':
+        return 'amazonMusic';
+      case 'StreamingProvider.amazon':
+        return 'amazon';
+      case 'StreamingProvider.youtubeMusic':
+        return 'youtubeMusic';
+      default:
+        return 'spotify';
     }
   }
 
@@ -210,17 +232,18 @@ class _EpisodeDetailPageState extends State<EpisodeDetailPage> {
                 SizedBox(height: 16),
                 Text(ep.beschreibung, style: TextStyle(fontSize: 16)),
                 SizedBox(height: 16),
-                FutureBuilder<String>(
-                  future: _getProviderName(),
-                  builder: (context, snapshot) {
-                    final provider = snapshot.data ?? 'Spotify';
-                    return ElevatedButton.icon(
-                      icon: Icon(Icons.play_arrow),
-                      label: Text('Auf $provider abspielen'),
-                      onPressed: _openStreaming,
-                    );
-                  },
-                ),
+                if (ep.serieTyp != 'DR3i')
+                  FutureBuilder<String>(
+                    future: _getProviderName(),
+                    builder: (context, snapshot) {
+                      final provider = snapshot.data ?? 'Spotify';
+                      return ElevatedButton.icon(
+                        icon: Icon(Icons.play_arrow),
+                        label: Text('Auf $provider abspielen'),
+                        onPressed: _openStreaming,
+                      );
+                    },
+                  ),
                 SizedBox(height: 16),
                 if (ep.sprechrollen != null && ep.sprechrollen!.isNotEmpty) ...[
                   Text('Sprecher:', style: Theme.of(context).textTheme.titleMedium),
