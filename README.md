@@ -17,6 +17,8 @@ For anyone who can't quite remember whether they've heard certain episodes of Di
   <img src="https://github.com/user-attachments/assets/748c1cda-bb1a-4a7c-b9b1-b43d5a6e9704" width="180" />
 </p>
 
+(German version below)
+
 Based on the idea and UI of [ selmaohneh/DdfGuide ](https://github.com/selmaohneh/DdfGuide)
 
 The app has been, however, completely rewritten in Flutter with the help of cursor.com/chatGPT, and new features have been added—such as episode tracking and a rating system. The main idea (unlike DdfGuide) is that you can mark and rate episodes you've listened to and make notes about them. 
@@ -25,7 +27,16 @@ Metadata about the episodes is provided by the great project https://dreimetadat
 
 Runs on Android – not yet available on iOS.
 
---------------------
+## ⬇️ Download
+
+**Latest alpha release:** `v0.1.0-alpha`
+
+👉 [Download APK](https://github.com/lead0r/DDF-Guide-Rate/releases/tag/v0.1.0-alpha)
+
+> ⚠️ This is an **alpha version**.  
+> Features may be incomplete and bugs may occur.
+
+---
 
 Für alle, die sich auch nicht mehr genau erinnern können, ob sie bestimmte Folgen von Die Drei ???, Die Drei ??? Kids und DiE DR3i schon gehört haben und wie sie diese fanden.
 
