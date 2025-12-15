@@ -3,6 +3,7 @@
 *.log
 *.pyc
 *.swp
+.DS_Store
 .atom/
 .build/
 .buildlog/
@@ -43,8 +44,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/key.properties
+/android/app/my-release-key.jks
 
 # macOS DS_Store
 .DS_Store
 **/.DS_Store
 
+# APK files
+*.apk
+**/*.apk
+build/app/outputs/**/*.apk
