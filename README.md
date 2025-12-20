@@ -1,4 +1,4 @@
-# DDF-Guide-Rate / DDF Tracker
+# DDF Tracker
 
 For anyone who can't quite remember whether they've heard certain episodes of Die Drei ???, Die Drei ??? Kids, and DiE DR3i, or what they thought of them.
 
