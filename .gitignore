@@ -56,6 +56,19 @@ app.*.map.json
 **/*.apk
 build/app/outputs/**/*.apk
 
+# iOS build and old ios folder
+ios_old/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/Flutter/.last_build_id
+# Xcode user state
+*.xcuserstate
+*.xcuserdata/
+*.moved-aside
+DerivedData/
+
+
 # Images
 assets/images/**
 
