@@ -3,18 +3,17 @@
 For anyone who can't quite remember whether they've heard certain episodes of Die Drei ???, Die Drei ??? Kids, and DiE DR3i, or what they thought of them.
 
 ## 📱 Screenshots
-
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/85e697e4-9b10-4689-808b-aa40b2d58879" width="180" />
-  <img src="https://github.com/user-attachments/assets/518225aa-e8a1-4856-bbed-173d6f57ac3b" width="180" />
-  <img src="https://github.com/user-attachments/assets/a05a5495-5918-494f-8e58-13a04a16cbab" width="180" />
-  <img src="https://github.com/user-attachments/assets/cf568e17-e769-479f-81e2-60cbe55325ad" width="180" />
+  <img src="https://github.com/user-attachments/assets/acd7ca6d-b2f0-4804-ab83-63626480555c" width="180" />
+  <img src="https://github.com/user-attachments/assets/c1b313a1-d3e3-4b43-a1d5-041a8499c498" width="180" />
+  <img src="https://github.com/user-attachments/assets/d6ca7acf-7571-403f-8fd5-be35df364283" width="180" />
+  <img src="https://github.com/user-attachments/assets/5a8d78cb-1800-4ec5-856d-f4a4b9f040e5" width="180" />
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/ff57a954-00b9-4e39-9f89-a5bc398bd640" width="180" />
-  <img src="https://github.com/user-attachments/assets/8e3d38fc-eda0-4268-9dc7-6677b8d0bf6c" width="180" />
-  <img src="https://github.com/user-attachments/assets/748c1cda-bb1a-4a7c-b9b1-b43d5a6e9704" width="180" />
+  <img src="https://github.com/user-attachments/assets/18740294-69f1-4fe1-9151-dc153a00b116" width="180" />
+  <img src="https://github.com/user-attachments/assets/b980acbf-f552-489f-86be-a5a0c2adbfaf" width="180" />
+  <img src="https://github.com/user-attachments/assets/80aeab96-d0e7-4334-905f-51c60df7a4cb" width="180" />
 </p>
 
 (German version below)
