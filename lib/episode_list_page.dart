@@ -9,6 +9,7 @@ import 'main.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'episode_state_provider.dart';
 import 'database_service.dart';
+import 'random_episode_page.dart';
 
 class EpisodeListPage extends StatefulWidget {
   @override
@@ -559,6 +560,15 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
           ],
         ),
         actions: [
+          SizedBox(width: 6),
+          Container(
+            width: 1,
+            height: 22,
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
+          SizedBox(width: 2),
+
           IconButton(
             icon: Icon(Icons.backup),
             tooltip: 'Backup',
@@ -585,6 +595,16 @@ class _EpisodeListPageState extends State<EpisodeListPage> with SingleTickerProv
             icon: Icon(Icons.filter_alt),
             tooltip: 'Filter',
             onPressed: _showFilterDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.casino),
+            tooltip: 'Zufällige Folge',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => RandomEpisodePage()),
+              );
+            },
           ),
           IconButton(
             icon: Icon(Icons.settings),
